@@ -1,0 +1,25 @@
+import { z } from "zod";
+
+const envSchema = z.object({
+  PANCAKE_API_KEY: z.string().min(1, "PANCAKE_API_KEY is required"),
+  PANCAKE_SHOP_ID: z.string().min(1, "PANCAKE_SHOP_ID is required"),
+  PANCAKE_BASE_URL: z
+    .string()
+    .url()
+    .default("https://pos.pages.fm/api/v1"),
+  PORT: z.coerce.number().int().positive().default(3000),
+  MCP_AUTH_TOKEN: z.string().optional().describe("Bearer token for HTTP transport auth"),
+});
+
+export type PancakeConfig = z.infer<typeof envSchema>;
+
+export function loadConfig(): PancakeConfig {
+  const result = envSchema.safeParse(process.env);
+  if (!result.success) {
+    const formatted = result.error.issues
+      .map((i) => `  - ${i.path.join(".")}: ${i.message}`)
+      .join("\n");
+    throw new Error(`Invalid environment configuration:\n${formatted}`);
+  }
+  return result.data;
+}

@@ -1,0 +1,89 @@
+import { z } from "zod";
+import type { PancakeHttpClient } from "../api-client/pancake-http-client.js";
+import { formatPaginatedResult } from "../shared/pagination-helpers.js";
+import { PaginationParams } from "../shared/schemas.js";
+
+const ReturnedItem = z.object({
+  variation_id: z.string(),
+  quantity: z.number().int().min(1),
+  price: z.number().optional(),
+});
+
+const ExchangeItem = z.object({
+  variation_id: z.string(),
+  quantity: z.number().int().min(1),
+  price: z.number().optional(),
+});
+
+const ListAction = z.object({
+  action: z.literal("list"),
+  search: z.string().optional(),
+  ...PaginationParams.shape,
+});
+
+const GetAction = z.object({
+  action: z.literal("get"),
+  return_id: z.string().describe("Return ID"),
+});
+
+const CreateAction = z.object({
+  action: z.literal("create"),
+  order_id_to_returned: z.number().int().describe("Original order ID being returned"),
+  returned_items: z.array(ReturnedItem).min(1).describe("Items to return"),
+  warehouse_id: z.string().describe("Warehouse UUID for returned stock"),
+  discount: z.number().optional().describe("Discount on return"),
+  returned_fee: z.number().optional().describe("Return shipping fee"),
+  note: z.string().optional(),
+  is_exchange: z.boolean().optional().describe("True if this is an exchange (return + new items)"),
+  exchange_items: z.array(ExchangeItem).optional().describe("New items for exchange (required if is_exchange=true)"),
+});
+
+const UpdateAction = z.object({
+  action: z.literal("update"),
+  return_id: z.string().describe("Return ID to update"),
+  status: z.number().int().optional(),
+  note: z.string().optional(),
+});
+
+const DeleteAction = z.object({
+  action: z.literal("delete"),
+  return_id: z.string().describe("Return ID to delete"),
+});
+
+export const returnsToolSchema = z.discriminatedUnion("action", [
+  ListAction,
+  GetAction,
+  CreateAction,
+  UpdateAction,
+  DeleteAction,
+]);
+
+export type ReturnsToolInput = z.infer<typeof returnsToolSchema>;
+
+export async function handleReturnsTool(args: ReturnsToolInput, client: PancakeHttpClient) {
+  switch (args.action) {
+    case "list": {
+      const { action, ...params } = args;
+      const result = await client.getList("order-returns", params);
+      return formatPaginatedResult(result);
+    }
+    case "get": {
+      const result = await client.get(`order-returns/${args.return_id}`);
+      return result.data;
+    }
+    case "create": {
+      const { action, ...body } = args;
+      const result = await client.post("order-returns", body);
+      return result.data;
+    }
+    case "update": {
+      const { action, return_id, ...body } = args;
+      const result = await client.put(`order-returns/${return_id}`, body);
+      return result.data;
+    }
+    case "delete": {
+      await client.delete(`order-returns/${args.return_id}`);
+      return { success: true, message: `Return ${args.return_id} deleted` };
+    }
+  }
+}

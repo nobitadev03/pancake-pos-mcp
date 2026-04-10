@@ -1,0 +1,673 @@
+import { z } from "zod";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { PancakeHttpClient } from "../api-client/pancake-http-client.js";
+import { formatToolError } from "../shared/error-handler.js";
+import { ordersToolSchema, handleOrdersTool } from "./orders-tool.js";
+import { productsToolSchema, handleProductsTool } from "./products-tool.js";
+import { customersToolSchema, handleCustomersTool } from "./customers-tool.js";
+import { inventoryToolSchema, handleInventoryTool } from "./inventory-tool.js";
+import { warehousesToolSchema, handleWarehousesTool } from "./warehouses-tool.js";
+import { suppliersToolSchema, handleSuppliersTool } from "./suppliers-tool.js";
+import { purchasesToolSchema, handlePurchasesTool } from "./purchases-tool.js";
+import { transfersToolSchema, handleTransfersTool } from "./transfers-tool.js";
+import { stocktakingToolSchema, handleStocktakingTool } from "./stocktaking-tool.js";
+import { returnsToolSchema, handleReturnsTool } from "./returns-tool.js";
+import { combosToolSchema, handleCombosTool } from "./combos-tool.js";
+import { promotionsToolSchema, handlePromotionsTool } from "./promotions-tool.js";
+import { vouchersToolSchema, handleVouchersTool } from "./vouchers-tool.js";
+import { crmContactsToolSchema, handleCrmContactsTool } from "./crm-contacts-tool.js";
+import { crmDealsToolSchema, handleCrmDealsTool } from "./crm-deals-tool.js";
+import { crmActivitiesToolSchema, handleCrmActivitiesTool } from "./crm-activities-tool.js";
+import { ecommerceToolSchema, handleEcommerceTool } from "./ecommerce-tool.js";
+import { livestreamToolSchema, handleLivestreamTool } from "./livestream-tool.js";
+import { employeesToolSchema, handleEmployeesTool } from "./employees-tool.js";
+import { webhooksToolSchema, handleWebhooksTool } from "./webhooks-tool.js";
+import { statisticsToolSchema, handleStatisticsTool } from "./statistics-tool.js";
+import { shopInfoToolSchema, handleShopInfoTool } from "./shop-info-tool.js";
+import { addressLookupToolSchema, handleAddressLookupTool } from "./address-lookup-tool.js";
+
+/**
+ * Register all Pancake POS tools with the MCP server.
+ * Uses `tool()` with raw shape for proper JSON Schema generation,
+ * then validates with discriminated union in handler for precise runtime checking.
+ */
+export function registerAllTools(server: McpServer, client: PancakeHttpClient): void {
+  // ── Phase 1: Core POS ──────────────────────────────────────────────────────
+
+  server.tool(
+    "manage_orders",
+    "Manage orders in Pancake POS. Actions: list (with filters/pagination/sorting), get (by ID), create, update, delete, print (generate PDF), ship (send to delivery partner), call_later (schedule callback).",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete", "print", "ship", "call_later"]).describe("Action to perform"),
+      order_id: z.number().int().optional().describe("Order ID (required for get/update/delete/print/ship)"),
+      // list params
+      search: z.string().optional().describe("Search by phone, name, note, or order code"),
+      filter_status: z.array(z.number().int()).optional().describe("Filter by status codes"),
+      page_number: z.number().int().optional().describe("Page number (default 1)"),
+      page_size: z.number().int().optional().describe("Items per page (default 30)"),
+      startDateTime: z.number().int().optional().describe("Start date unix timestamp"),
+      endDateTime: z.number().int().optional().describe("End date unix timestamp"),
+      option_sort: z.string().optional().describe("Sort order e.g. inserted_at_desc"),
+      // create/update params
+      bill_full_name: z.string().optional().describe("Buyer name (required for create)"),
+      bill_phone_number: z.string().optional().describe("Buyer phone (required for create)"),
+      items: z.array(z.object({ quantity: z.number(), variation_id: z.string(), product_id: z.string() })).optional().describe("Order items (required for create)"),
+      warehouse_id: z.string().optional().describe("Warehouse UUID"),
+      shipping_address: z.record(z.string(), z.unknown()).optional().describe("Shipping address object"),
+      note: z.string().optional(),
+      status: z.number().int().optional().describe("Status for update"),
+      tags: z.array(z.number().int()).optional(),
+      // ship params
+      partner_id: z.number().int().optional().describe("Shipping partner ID (required for ship)"),
+      // call_later params
+      order_ids: z.array(z.string()).optional().describe("Order IDs for call_later"),
+      needs_call_at: z.string().optional().describe("ISO datetime for callback"),
+      phone_number: z.string().optional(),
+      notice_created: z.string().optional(),
+      need_notify_users: z.array(z.string()).optional(),
+      // print params
+      template: z.string().optional().describe("Print template: default, a5, label"),
+    },
+    async (args) => {
+      try {
+        const parsed = ordersToolSchema.parse(args);
+        const result = await handleOrdersTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_products",
+    "Manage products in Pancake POS. Actions: list (search/filters), get (by UUID), create, update, delete, list_variations, create_variation.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete", "list_variations", "create_variation"]).describe("Action to perform"),
+      product_id: z.string().optional().describe("Product UUID (required for get/update/delete/list_variations/create_variation)"),
+      search: z.string().optional().describe("Search by name, custom_id, or barcode"),
+      category_ids: z.array(z.number().int()).optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      name: z.string().optional().describe("Product name (required for create)"),
+      custom_id: z.string().optional().describe("Custom product ID / SKU"),
+      description: z.string().optional(),
+      retail_price: z.number().optional(),
+      images: z.array(z.string()).optional(),
+      keyword: z.string().optional().describe("Variation name (required for create_variation)"),
+      barcode: z.string().optional(),
+      weight: z.number().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = productsToolSchema.parse(args);
+        const result = await handleProductsTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_customers",
+    "Manage customers in Pancake POS. Actions: list (search), get (by UUID), create, update, delete, reward_history, add_note.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete", "reward_history", "add_note"]).describe("Action to perform"),
+      customer_id: z.string().optional().describe("Customer UUID (required for get/update/delete/reward_history)"),
+      search: z.string().optional().describe("Search by name, phone, or email"),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      name: z.string().optional().describe("Customer name (required for create)"),
+      phone_numbers: z.array(z.string()).optional().describe("Phone numbers (required for create)"),
+      emails: z.array(z.string()).optional(),
+      gender: z.enum(["male", "female", "other"]).optional(),
+      date_of_birth: z.string().optional(),
+      reward_point: z.number().optional(),
+      tags: z.array(z.string()).optional(),
+      message: z.string().optional().describe("Note message (required for add_note)"),
+      order_id: z.number().int().optional().describe("Related order ID for add_note"),
+    },
+    async (args) => {
+      try {
+        const parsed = customersToolSchema.parse(args);
+        const result = await handleCustomersTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_inventory",
+    "Manage inventory in Pancake POS. Actions: report (inventory report with filters by warehouse, category, supplier, quantity range).",
+    {
+      action: z.enum(["report"]).describe("Action to perform"),
+      warehouse_ids: z.array(z.string()).optional().describe("Filter by warehouse UUIDs"),
+      category_ids: z.array(z.number().int()).optional(),
+      supplier_ids: z.array(z.string()).optional(),
+      brand_ids: z.array(z.number().int()).optional(),
+      min_quantity: z.number().optional(),
+      max_quantity: z.number().optional(),
+      include_hidden: z.boolean().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = inventoryToolSchema.parse(args);
+        const result = await handleInventoryTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  // ── Phase 2: Supply Chain ──────────────────────────────────────────────────
+
+  server.tool(
+    "manage_warehouses",
+    "Manage warehouses in Pancake POS. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      warehouse_id: z.string().optional().describe("Warehouse UUID (required for get/update/delete)"),
+      search: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      name: z.string().optional().describe("Warehouse name (required for create)"),
+      phone_number: z.string().optional(),
+      address: z.string().optional(),
+      province_id: z.string().optional(),
+      district_id: z.string().optional(),
+      commune_id: z.string().optional(),
+      allow_create_order: z.boolean().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = warehousesToolSchema.parse(args);
+        const result = await handleWarehousesTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_suppliers",
+    "Manage suppliers in Pancake POS. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      supplier_id: z.string().optional().describe("Supplier ID (required for get/update/delete)"),
+      search: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      name: z.string().optional().describe("Supplier name (required for create)"),
+      phone_number: z.string().optional(),
+      email: z.string().optional(),
+      address: z.string().optional(),
+      description: z.string().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = suppliersToolSchema.parse(args);
+        const result = await handleSuppliersTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_purchases",
+    "Manage purchase orders in Pancake POS. Actions: list, get, create, update, delete. Links suppliers to inventory inbound stock.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      purchase_id: z.string().optional().describe("Purchase order ID (required for get/update/delete)"),
+      supplier_id: z.string().optional().describe("Supplier ID (required for create; filter for list)"),
+      warehouse_id: z.string().optional().describe("Warehouse UUID (required for create; filter for list)"),
+      search: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      startDateTime: z.number().int().optional(),
+      endDateTime: z.number().int().optional(),
+      items: z.array(z.object({ variation_id: z.string(), quantity: z.number().int(), price: z.number().optional() })).optional().describe("Purchase items"),
+      note: z.string().optional(),
+      discount: z.number().optional(),
+      expected_at: z.string().optional(),
+      status: z.number().int().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = purchasesToolSchema.parse(args);
+        const result = await handlePurchasesTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_transfers",
+    "Manage warehouse-to-warehouse stock transfers in Pancake POS. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      transfer_id: z.string().optional().describe("Transfer ID (required for get/update/delete)"),
+      source_warehouse_id: z.string().optional().describe("Source warehouse UUID (required for create)"),
+      destination_warehouse_id: z.string().optional().describe("Destination warehouse UUID (required for create)"),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      items: z.array(z.object({ variation_id: z.string(), quantity: z.number().int() })).optional(),
+      note: z.string().optional(),
+      status: z.number().int().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = transfersToolSchema.parse(args);
+        const result = await handleTransfersTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_stocktaking",
+    "Manage stocktaking (physical inventory counts) in Pancake POS. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      stocktaking_id: z.string().optional().describe("Stocktaking ID (required for get/update/delete)"),
+      warehouse_id: z.string().optional().describe("Warehouse UUID (required for create; filter for list)"),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      items: z.array(z.object({ variation_id: z.string(), actual_quantity: z.number().int() })).optional().describe("Items with actual counted quantities"),
+      note: z.string().optional(),
+      status: z.number().int().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = stocktakingToolSchema.parse(args);
+        const result = await handleStocktakingTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  // ── Phase 3: Sales Extensions ──────────────────────────────────────────────
+
+  server.tool(
+    "manage_returns",
+    "Manage order returns and exchanges in Pancake POS. Actions: list, get, create, update, delete. Supports exchange flow (return + new items).",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      return_id: z.string().optional().describe("Return ID (required for get/update/delete)"),
+      search: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      order_id_to_returned: z.number().int().optional().describe("Original order ID (required for create)"),
+      returned_items: z.array(z.object({ variation_id: z.string(), quantity: z.number().int(), price: z.number().optional() })).optional(),
+      warehouse_id: z.string().optional().describe("Destination warehouse for returned stock"),
+      discount: z.number().optional(),
+      returned_fee: z.number().optional(),
+      note: z.string().optional(),
+      is_exchange: z.boolean().optional(),
+      exchange_items: z.array(z.object({ variation_id: z.string(), quantity: z.number().int(), price: z.number().optional() })).optional(),
+      status: z.number().int().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = returnsToolSchema.parse(args);
+        const result = await handleReturnsTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_combos",
+    "Manage product combos (bundled deals) in Pancake POS. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      combo_id: z.string().optional().describe("Combo ID (required for get/update/delete)"),
+      search: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      name: z.string().optional().describe("Combo name (required for create)"),
+      discount_amount: z.number().optional(),
+      is_free_shipping: z.boolean().optional(),
+      variations: z.array(z.object({ variation_id: z.string(), quantity: z.number().int(), discount_amount: z.number().optional() })).optional(),
+      bonus_products: z.array(z.object({ variation_id: z.string(), quantity: z.number().int() })).optional(),
+      start_time: z.number().int().optional(),
+      end_time: z.number().int().optional(),
+      order_sources: z.array(z.number().int()).optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = combosToolSchema.parse(args);
+        const result = await handleCombosTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_promotions",
+    "Manage promotions (discounts) in Pancake POS. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      promotion_id: z.string().optional().describe("Promotion ID (required for get/update/delete)"),
+      search: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      name: z.string().optional().describe("Promotion name (required for create)"),
+      discount_type: z.enum(["percent", "amount"]).optional(),
+      discount_value: z.number().optional(),
+      minimum_order_value: z.number().optional(),
+      start_time: z.number().int().optional(),
+      end_time: z.number().int().optional(),
+      is_active: z.boolean().optional(),
+      applicable_product_ids: z.array(z.string()).optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = promotionsToolSchema.parse(args);
+        const result = await handlePromotionsTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_vouchers",
+    "Manage voucher codes in Pancake POS. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      voucher_id: z.string().optional().describe("Voucher ID (required for get/update/delete)"),
+      search: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      code: z.string().optional().describe("Unique voucher code (required for create)"),
+      name: z.string().optional(),
+      discount_type: z.enum(["percent", "amount"]).optional(),
+      discount_value: z.number().optional(),
+      minimum_order_value: z.number().optional(),
+      max_usage: z.number().int().optional(),
+      start_time: z.number().int().optional(),
+      end_time: z.number().int().optional(),
+      is_active: z.boolean().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = vouchersToolSchema.parse(args);
+        const result = await handleVouchersTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  // ── Phase 4: CRM + Multi-Channel ──────────────────────────────────────────
+
+  server.tool(
+    "manage_crm_contacts",
+    "Manage CRM contacts in Pancake POS. Actions: list, get, create, update, delete. CRM pipeline: contacts → deals → activities.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      contact_id: z.string().optional().describe("CRM contact ID (required for get/update/delete)"),
+      search: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      name: z.string().optional().describe("Contact name (required for create)"),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+      company: z.string().optional(),
+      address: z.string().optional(),
+      note: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = crmContactsToolSchema.parse(args);
+        const result = await handleCrmContactsTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_crm_deals",
+    "Manage CRM deals (sales pipeline opportunities) in Pancake POS. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      deal_id: z.string().optional().describe("CRM deal ID (required for get/update/delete)"),
+      contact_id: z.string().optional().describe("Linked CRM contact ID"),
+      search: z.string().optional(),
+      stage: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      name: z.string().optional().describe("Deal name (required for create)"),
+      amount: z.number().optional(),
+      expected_close_date: z.string().optional(),
+      note: z.string().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = crmDealsToolSchema.parse(args);
+        const result = await handleCrmDealsTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_crm_activities",
+    "Manage CRM activities (calls, meetings, notes, emails, tasks) in Pancake POS. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      activity_id: z.string().optional().describe("CRM activity ID (required for get/update/delete)"),
+      contact_id: z.string().optional().describe("Filter by CRM contact ID"),
+      deal_id: z.string().optional().describe("Filter by CRM deal ID"),
+      activity_type: z.enum(["call", "meeting", "note", "email", "task"]).optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      title: z.string().optional().describe("Activity title (required for create)"),
+      description: z.string().optional(),
+      scheduled_at: z.string().optional(),
+      duration_minutes: z.number().int().optional(),
+      is_completed: z.boolean().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = crmActivitiesToolSchema.parse(args);
+        const result = await handleCrmActivitiesTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_ecommerce",
+    "Manage ecommerce channel integrations (Shopee, Lazada, TikTok) in Pancake POS. Actions: sync (trigger channel sync), list_products.",
+    {
+      action: z.enum(["sync", "list_products"]).describe("Action to perform"),
+      channel: z.enum(["shopee", "lazada", "tiktok"]).optional().describe("Ecommerce channel (required for sync)"),
+      shop_channel_id: z.string().optional(),
+      search: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = ecommerceToolSchema.parse(args);
+        const result = await handleEcommerceTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_livestream",
+    "Manage live selling sessions (livestreams) in Pancake POS. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      livestream_id: z.string().optional().describe("Livestream ID (required for get/update/delete)"),
+      search: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      name: z.string().optional().describe("Livestream title (required for create)"),
+      scheduled_at: z.string().optional(),
+      description: z.string().optional(),
+      product_ids: z.array(z.string()).optional(),
+      status: z.number().int().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = livestreamToolSchema.parse(args);
+        const result = await handleLivestreamTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  // ── Phase 5: Operations + Polish ──────────────────────────────────────────
+
+  server.tool(
+    "manage_employees",
+    "Manage employees/staff in Pancake POS. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      employee_id: z.string().optional().describe("Employee ID (required for get/update/delete)"),
+      search: z.string().optional(),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      name: z.string().optional().describe("Employee full name (required for create)"),
+      phone_number: z.string().optional(),
+      email: z.string().optional(),
+      role: z.string().optional(),
+      warehouse_ids: z.array(z.string()).optional(),
+      is_active: z.boolean().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = employeesToolSchema.parse(args);
+        const result = await handleEmployeesTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "manage_webhooks",
+    "Manage webhooks for Pancake POS event notifications. Actions: list, get, create, update, delete.",
+    {
+      action: z.enum(["list", "get", "create", "update", "delete"]).describe("Action to perform"),
+      webhook_id: z.string().optional().describe("Webhook ID (required for get/update/delete)"),
+      page_number: z.number().int().optional(),
+      page_size: z.number().int().optional(),
+      url: z.string().optional().describe("Webhook URL (required for create)"),
+      events: z.array(z.string()).optional().describe("Event types to subscribe to"),
+      headers: z.record(z.string(), z.string()).optional(),
+      is_active: z.boolean().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = webhooksToolSchema.parse(args);
+        const result = await handleWebhooksTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "get_statistics",
+    "Get statistics reports from Pancake POS. Action: get with type=inventory|sales|orders. Supports date range and grouping.",
+    {
+      action: z.enum(["get"]).describe("Action to perform"),
+      type: z.enum(["inventory", "sales", "orders"]).describe("Statistics type"),
+      startDateTime: z.number().int().optional().describe("Start date unix timestamp"),
+      endDateTime: z.number().int().optional().describe("End date unix timestamp"),
+      group_by: z.string().optional().describe("Group by: day, week, month, product, category"),
+      warehouse_id: z.string().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = statisticsToolSchema.parse(args);
+        const result = await handleStatisticsTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "get_shop_info",
+    "Get or update Pancake POS shop information. Actions: get (retrieve shop profile), update (update shop details).",
+    {
+      action: z.enum(["get", "update"]).describe("Action to perform"),
+      name: z.string().optional().describe("Shop display name"),
+      phone_number: z.string().optional(),
+      email: z.string().optional(),
+      address: z.string().optional(),
+      province_id: z.string().optional(),
+      district_id: z.string().optional(),
+      commune_id: z.string().optional(),
+      website: z.string().optional(),
+      logo_url: z.string().optional(),
+    },
+    async (args) => {
+      try {
+        const parsed = shopInfoToolSchema.parse(args);
+        const result = await handleShopInfoTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.tool(
+    "lookup_address",
+    "Lookup Vietnamese administrative addresses in Pancake POS. Actions: provinces (all provinces), districts (by province_id), communes (by district_id).",
+    {
+      action: z.enum(["provinces", "districts", "communes"]).describe("Action: provinces (all), districts (requires province_id), communes (requires district_id)"),
+      province_id: z.string().optional().describe("Province ID (required for districts action)"),
+      district_id: z.string().optional().describe("District ID (required for communes action)"),
+    },
+    async (args) => {
+      try {
+        const parsed = addressLookupToolSchema.parse(args);
+        const result = await handleAddressLookupTool(parsed, client);
+        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+}
