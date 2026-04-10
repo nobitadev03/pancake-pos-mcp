@@ -242,7 +242,7 @@ All files in: `./docs/`
 2. `pancake-api-research-report.md` — Full analysis
 3. `pancake-api-complete-taxonomy.md` — Directory of all endpoints
 4. `pancake-api-discovery-summary.md` — What's new vs. known
-5. `RESEARCH-COMPLETE.md` — Executive summary
+5. `research-complete.md` — Executive summary
 
 ---
 

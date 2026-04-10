@@ -43,7 +43,7 @@
 ## Quick Navigation
 
 ### 📋 For Executive Summary
-**Read:** [`RESEARCH-COMPLETE.md`](./RESEARCH-COMPLETE.md) (5.5 KB)
+**Read:** [`research-complete.md`](./research-complete.md) (5.5 KB)
 - Key findings in 1 minute
 - High-impact discoveries highlighted
 - Implementation roadmap
@@ -64,7 +64,7 @@
 - High-impact discoveries explained
 
 ### 🎯 For Developer Reference
-**Read:** [`API-QUICK-REFERENCE.md`](./API-QUICK-REFERENCE.md) (6.2 KB)
+**Read:** [`api-quick-reference.md`](./api-quick-reference.md) (6.2 KB)
 - Quick endpoint lookup table
 - Standard query parameters
 - HTTP methods reference
@@ -307,7 +307,7 @@ Quick reference comparing known vs. discovered endpoints:
 
 **Use for:** Stakeholder communication, discovery briefing, progress tracking
 
-### `API-QUICK-REFERENCE.md` (6.2 KB)
+### `api-quick-reference.md` (6.2 KB)
 Developer quick reference card:
 - Endpoint counts by domain
 - Quick lookup tables for all major endpoints
@@ -320,7 +320,7 @@ Developer quick reference card:
 
 **Use for:** Development reference, IDE lookups, quick troubleshooting
 
-### `RESEARCH-COMPLETE.md` (5.5 KB)
+### `research-complete.md` (5.5 KB)
 Executive summary of research findings:
 - Key findings and endpoint statistics
 - High-impact discoveries (6 major areas)
@@ -337,22 +337,22 @@ Executive summary of research findings:
 ## How to Use These Documents
 
 ### For Project Planning
-1. Read `RESEARCH-COMPLETE.md` for overview
+1. Read `research-complete.md` for overview
 2. Review `pancake-api-research-report.md` for technical context
 3. Use `pancake-api-discovery-summary.md` for feature coverage analysis
 
 ### For Development
-1. Reference `API-QUICK-REFERENCE.md` for endpoint lookups
+1. Reference `api-quick-reference.md` for endpoint lookups
 2. Consult `pancake-api-complete-taxonomy.md` for data flow understanding
 3. Use `pancake-openapi-spec.json` for code generation
 
 ### For Integration Planning
 1. Review `pancake-api-research-report.md` for architecture insights
 2. Study `pancake-api-complete-taxonomy.md` for integration points
-3. Check `API-QUICK-REFERENCE.md` for implementation details
+3. Check `api-quick-reference.md` for implementation details
 
 ### For Stakeholder Communication
-1. Share `RESEARCH-COMPLETE.md` for executive summary
+1. Share `research-complete.md` for executive summary
 2. Provide `pancake-api-discovery-summary.md` for feature details
 3. Reference coverage matrices in all documents
 
