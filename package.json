@@ -1,0 +1,24 @@
+{
+  "name": "pancake-pos-mcp",
+  "version": "0.1.0",
+  "description": "MCP server wrapping Pancake POS REST API for AI assistant and automation integration",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "start:stdio": "bun run src/index.ts --stdio",
+    "start:http": "bun run src/index.ts --http",
+    "typecheck": "bun run --bun tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.3.6"
+  }
+}
