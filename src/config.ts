@@ -13,8 +13,10 @@ const envSchema = z.object({
 
 export type PancakeConfig = z.infer<typeof envSchema>;
 
-export function loadConfig(): PancakeConfig {
-  const result = envSchema.safeParse(process.env);
+export function loadConfig(
+  source: Record<string, unknown> = process.env,
+): PancakeConfig {
+  const result = envSchema.safeParse(source);
   if (!result.success) {
     const formatted = result.error.issues
       .map((i) => `  - ${i.path.join(".")}: ${i.message}`)
