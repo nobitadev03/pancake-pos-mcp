@@ -1,7 +1,7 @@
 # Pancake POS MCP - Deployment Guide
 
 **Version:** 0.1.0  
-**Last Updated:** 2026-04-10  
+**Last Updated:** 2026-04-11  
 **Audience:** DevOps engineers, system administrators, developers
 
 ---
@@ -208,6 +208,15 @@ MCP_AUTH_TOKEN=super_secret_token_xyz
 # On startup, server will log:
 # [pancake-pos-mcp] Server started on HTTP transport at http://localhost:3000/mcp
 ```
+
+---
+
+## Deployment Options
+
+This project supports three deployment models:
+1. **Claude Desktop (Stdio)** — Local machine, single-user
+2. **HTTP Server** — Single machine or VM, multi-client
+3. **Cloudflare Workers** — Serverless, global edge network
 
 ---
 
@@ -426,6 +435,176 @@ services:
 docker-compose up -d
 docker-compose logs -f
 ```
+
+---
+
+### Architecture 4: Cloudflare Workers (Serverless)
+
+**Topology:**
+```
+Multiple Clients (worldwide)
+    ↓ (HTTPS)
+Cloudflare Workers (global edge network)
+    ↓ (HTTPS)
+Pancake POS API
+```
+
+**Prerequisites:**
+- Cloudflare account (free or paid)
+- Wrangler CLI installed: `npm install -g wrangler`
+- Pancake API credentials
+
+**Deployment Steps:**
+
+1. **Login to Cloudflare:**
+
+```bash
+wrangler login
+# Opens browser to authorize Cloudflare access
+```
+
+2. **Configure Secrets:**
+
+```bash
+# Set API credentials (stored securely in Cloudflare)
+wrangler secret put PANCAKE_API_KEY
+# Paste your key and press Ctrl+D
+
+wrangler secret put PANCAKE_SHOP_ID
+# Paste your shop ID and press Ctrl+D
+
+# Optional: set MCP auth token
+wrangler secret put MCP_AUTH_TOKEN
+# Paste your bearer token
+```
+
+3. **Deploy:**
+
+```bash
+wrangler deploy
+# Builds and deploys to Cloudflare Workers
+# Output: https://pancake-pos-mcp.your-subdomain.workers.dev
+```
+
+4. **Verify Deployment:**
+
+```bash
+curl https://pancake-pos-mcp.your-subdomain.workers.dev/health
+# Response: {"status":"ok","transport":"streamable-http"}
+```
+
+**Usage:**
+
+```bash
+# With auth token (if MCP_AUTH_TOKEN is set)
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_token" \
+  -d '{"jsonrpc":"2.0","method":"tools/list",...}' \
+  https://pancake-pos-mcp.your-subdomain.workers.dev/mcp
+
+# Without auth token (development only)
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/list",...}' \
+  https://pancake-pos-mcp.your-subdomain.workers.dev/mcp
+```
+
+**Custom Domain (Optional):**
+
+```bash
+# In Cloudflare dashboard:
+# 1. Go to Workers → Routes
+# 2. Add route: pancake-mcp.example.com/*
+# 3. Service: pancake-pos-mcp
+# 4. Zone: example.com
+
+# Test with custom domain
+curl https://pancake-mcp.example.com/health
+```
+
+**Claude Desktop via mcp-remote:**
+
+Since Claude Desktop uses stdio transport, connect to the Workers endpoint using `mcp-remote` as a bridge:
+
+```json
+{
+  "mcpServers": {
+    "pancake-pos": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://pancake-pos-mcp.your-subdomain.workers.dev/mcp",
+        "--header", "Authorization: Bearer your_token"
+      ]
+    }
+  }
+}
+```
+
+**Local Development:**
+
+```bash
+# Copy secrets template
+cp .dev.vars.example .dev.vars
+# Edit .dev.vars with your credentials
+
+# Start local Workers dev server
+bun run dev:workers
+# Runs at http://localhost:8787
+```
+
+**Performance Characteristics:**
+
+| Metric | Value |
+|--------|-------|
+| Timeout | 8 seconds (Cloudflare limit) |
+| Retries | 2 attempts |
+| Rate Limiter | Disabled (per-request model) |
+| Regions | Global edge network |
+| Cold Start | < 50ms |
+
+**Cost Model:**
+- Free tier: 100,000 requests/day
+- Paid tier: $0.50/million requests
+- No charge for idle time
+
+**Monitoring:**
+
+Cloudflare dashboard → Workers → analytics:
+- Requests
+- Errors (4xx, 5xx)
+- CPU time
+- Wall-clock time
+
+**Troubleshooting:**
+
+**Issue:** "Secret not found" on deploy
+```bash
+wrangler secret list
+# Check that all required secrets exist
+```
+
+**Issue:** "Worker timeout" on slow Pancake API calls
+- Use `POST /statistics` or large paginated lists sparingly
+- Consider pre-caching on Bun server instead
+
+**Issue:** "CORS error" from client
+- CORS headers are automatically added by worker
+- Check that client sends correct `Authorization` header
+
+**Pros:**
+- Global CDN, low latency worldwide
+- No infrastructure management
+- Automatic scaling
+- Cheap (pay-per-request)
+- Easy rollback (instant deploy)
+
+**Cons:**
+- 8s timeout (shorter than Bun 30s)
+- No persistent state (per-request lifecycle)
+- Reduced retry budget (2 vs 3)
+- Cloudflare-specific (vendor lock-in)
 
 ---
 
@@ -693,5 +872,5 @@ Include:
 
 **Document Purpose:** Enable seamless deployment of Pancake POS MCP across development, staging, and production environments.
 
-**Last Updated:** 2026-04-10  
+**Last Updated:** 2026-04-11  
 **Maintainer:** DevOps & Platform Engineering

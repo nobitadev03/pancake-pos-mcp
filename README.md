@@ -92,6 +92,51 @@ MCP_AUTH_TOKEN=your_secret_token
 curl -H "Authorization: Bearer your_secret_token" http://localhost:3000/mcp
 ```
 
+### Cloudflare Workers (Serverless Edge)
+
+Deploy globally on Cloudflare Workers for low-latency access from anywhere:
+
+```bash
+# Install dependencies
+bun install
+
+# Local development (uses .dev.vars for secrets)
+cp .dev.vars.example .dev.vars
+# Edit .dev.vars with your credentials
+bun run dev:workers
+# Runs at http://localhost:8787
+
+# Deploy to Cloudflare
+wrangler login
+bun run deploy
+
+# Set production secrets
+wrangler secret put PANCAKE_API_KEY
+wrangler secret put PANCAKE_SHOP_ID
+wrangler secret put MCP_AUTH_TOKEN
+```
+
+Workers URL: `https://pancake-pos-mcp.<your-subdomain>.workers.dev/mcp`
+
+**Connect Claude Desktop via mcp-remote:**
+
+```json
+{
+  "mcpServers": {
+    "pancake-pos": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://pancake-pos-mcp.<your-subdomain>.workers.dev/mcp",
+        "--header", "Authorization: Bearer <your-token>"
+      ]
+    }
+  }
+}
+```
+
+**Workers characteristics:** 8s timeout per upstream call, 2 retries, rate limiter disabled (stateless per-request model). Free tier: 100k requests/day. See [deployment guide](./docs/deployment-guide.md) for full details.
+
 ## Available Tools
 
 | Tool | Phase | Description |
@@ -139,7 +184,7 @@ Static reference resources (no authentication required):
 - **API Client:** Token-bucket rate limiting (1000/min, 10000/hour), exponential backoff retries (3 attempts)
 - **Tools:** 23 MCP tools organized by business domain
 - **Schema Validation:** Zod with discriminated unions for strict runtime validation
-- **Transport:** Stdio (default) + Streamable HTTP with optional Bearer token auth
+- **Transport:** Stdio (default) + Streamable HTTP + Cloudflare Workers with optional Bearer token auth
 - **Error Handling:** Structured error responses with code and message
 
 ## Development
@@ -169,6 +214,7 @@ src/
 ├── shared/                  # Schemas, errors, pagination
 ├── config.ts                # Environment configuration
 ├── server.ts                # MCP server factory
+├── worker.ts                # Cloudflare Workers entry point
 └── index.ts                 # Entry point (stdio + HTTP)
 ```
 

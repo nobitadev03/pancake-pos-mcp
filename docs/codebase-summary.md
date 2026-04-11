@@ -1,8 +1,8 @@
 # Pancake POS MCP - Codebase Summary
 
 **Version:** 0.1.0  
-**Status:** Complete (Phases 1-5 implemented)  
-**Technology Stack:** Bun + TypeScript + MCP SDK v1.29.0
+**Status:** Complete (Phases 1-5 implemented + Cloudflare Workers deployment)  
+**Technology Stack:** Bun + TypeScript + MCP SDK v1.29.0 + Wrangler
 
 ---
 
@@ -67,7 +67,16 @@ src/
 │   └── pagination-helpers.ts        # Pagination result formatting
 ├── config.ts                # Configuration (BASE_URL, API_KEY, SHOP_ID)
 ├── server.ts                # MCP server factory function
-└── index.ts                 # Entry point (stdio + HTTP bootstrap)
+├── index.ts                 # Entry point (Bun: stdio + HTTP bootstrap)
+└── worker.ts                # Entry point (Cloudflare Workers fetch handler)
+```
+
+**Deployment Models:**
+The codebase supports two independent deployment entry points:
+- **index.ts:** Primary entry point for traditional server deployment (Bun runtime). Supports stdio transport (Claude Desktop) or Streamable HTTP transport (remote access). Full rate limiter with 30s timeout and 3 retries.
+- **worker.ts:** Alternative entry point for serverless Cloudflare Workers deployment. Fresh MCP server per request, 8s timeout, 2 retries, rate limiter disabled. Same tool/resource implementations as index.ts, differing only in transport and environment tuning.
+
+Both entry points reuse the identical HTTP client, tool registry, and resource definitions; configuration and deployment mode selection determines which is used.
 ```
 
 ---
@@ -115,16 +124,47 @@ await this.consumeToken();
 
 **Rationale:** Ensures predictable behavior; prevents sudden spike-based rate limit violations.
 
-### 3. Exponential Backoff Retry (3 Attempts)
+### 3. Exponential Backoff Retry (Configurable: 2-3 Attempts)
 Only retries on server errors (5xx status codes):
 ```typescript
-if (response.status >= 500 && attempt < MAX_RETRIES - 1) {
+if (response.status >= 500 && attempt < maxRetries - 1) {
   const delay = RETRY_BASE_MS * Math.pow(2, attempt); // 1s → 2s → 4s
   await sleep(delay);
 }
 ```
 
-**Rationale:** Avoids overwhelming a degraded backend; 3 attempts balances resilience vs. latency.
+**Default (Bun mode):** 3 attempts, 30s timeout, rate limiter enabled
+**Workers mode:** 2 attempts, 8s timeout, rate limiter disabled
+
+**Rationale:** Avoids overwhelming a degraded backend; configurable retry budget balances resilience vs. latency based on deployment environment.
+
+### 3.5. Deployment-Specific HTTP Client Configuration
+
+The `HttpClientOptions` interface enables environment-specific tuning:
+
+```typescript
+export interface HttpClientOptions {
+  fetchTimeoutMs?: number;      // Fetch timeout (default: 30000ms)
+  maxRetries?: number;          // Retry attempts (default: 3)
+  enableRateLimiter?: boolean;  // Token bucket (default: true)
+}
+```
+
+**Bun/HTTP Server Mode:**
+```typescript
+new PancakeHttpClient(config)  // All defaults: 30s, 3 retries, rate limiting
+```
+
+**Cloudflare Workers Mode:**
+```typescript
+new PancakeHttpClient(config, {
+  fetchTimeoutMs: 8_000,        // 8s (Cloudflare constraint)
+  maxRetries: 2,                // Reduced for timeout budget
+  enableRateLimiter: false,     // Per-request mode incompatible with stateful bucket
+})
+```
+
+**Rationale:** Per-request Workers architecture cannot maintain persistent rate limiter state; Bun server maintains rate limiting across lifetime.
 
 ### 4. URL Path Security with Encoding
 `request-builder.ts` constructs paths with **path segment encoding** to prevent traversal attacks:
