@@ -7,7 +7,7 @@
 
 ## Overview
 - **Priority:** P1
-- **Status:** in-progress
+- **Status:** complete
 - **Description:** Deploy to Cloudflare Workers, set production secrets, update documentation
 
 ## Key Insights
@@ -151,9 +151,9 @@ curl -X POST \
 5. **Run smoke tests** against production URL
 
 ## Todo List
-- [ ] Deploy Worker to Cloudflare
-- [ ] Set production secrets via wrangler
-- [ ] Run health check smoke test
+- [x] Deploy Worker to Cloudflare
+- [x] Set production secrets via wrangler
+- [x] Run health check smoke test
 - [ ] Run MCP Inspector against production URL
 - [x] Update docs/deployment-guide.md with Workers section
 - [x] Update README.md with Workers usage
