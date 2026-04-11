@@ -9,10 +9,18 @@
     "start": "bun run src/index.ts",
     "start:stdio": "bun run src/index.ts --stdio",
     "start:http": "bun run src/index.ts --http",
-    "typecheck": "bun run --bun tsc --noEmit"
+    "typecheck": "bun run --bun tsc --noEmit",
+    "dev:workers": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@cloudflare/vitest-pool-workers": "^0.14.3",
+    "@cloudflare/workers-types": "^4.20260410.1",
+    "@types/bun": "latest",
+    "vitest": "^4.1.4",
+    "wrangler": "^4.81.1"
   },
   "peerDependencies": {
     "typescript": "^5"
