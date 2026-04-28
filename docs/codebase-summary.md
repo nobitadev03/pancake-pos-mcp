@@ -327,6 +327,37 @@ Request 5: 240ms  - (if hour bucket also depleted, wait is MAX of both)
 
 ---
 
+## Vietnam Address Handling
+
+Pancake POS supports two coexisting address formats since the 2025-07-01
+administrative reform:
+
+- **OLD format (3-tier):** `province_id` → `district_id` → `commune_id`. Pre-reform IDs (e.g. `province_id="701"`).
+- **NEW format (2-tier):** `new_province_id` → `new_commune_id`. Post-reform IDs (e.g. `new_province_id="84_VN129"`). District level was removed.
+
+The shared `VietnamAddressSchema` (`src/shared/schemas.ts`) exposes both — all
+fields optional, callsites `.extend({...})` for required contact fields. Order
+GET responses include `shipping_address.{province_id, new_province_id, new_commune_id}`
+when populated; callers should reuse those IDs rather than calling the
+address-lookup tool.
+
+**Handler validation** (`orders-tool.ts → assertAddressHasLocation`): on
+`create`, at least one province anchor (`province_id` or `new_province_id`) is
+required. On `update`, validation only fires when caller sends any location
+field — pure contact updates (phone/name) bypass.
+
+**Verify-after-update** (`orders-tool.ts → case "update"`): after PUT, if any
+fragile field (`shipping_fee`, `partner_fee`, `is_free_shipping`) was sent, GET
+the order and compare. Mismatches surface in `warnings: string[]` on the response,
+each with a workaround hint. Pancake silently drops these fields on some shops.
+
+**`address-lookup-tool` is currently known-broken upstream** (`/address/*`
+endpoints return 404 on both pos.pages.fm and pos.pancake.vn with both api_key
+and JWT, verified 2026-04-28). Tool surface kept for forward-compat; handler
+intercepts 404 and throws a structured deprecation message. Workaround above.
+
+---
+
 ## Known Issues & Patterns
 
 ### Critical Issues (from code review)
@@ -337,6 +368,8 @@ Request 5: 240ms  - (if hour bucket also depleted, wait is MAX of both)
 2. **getRaw() Missing Error Check:** `PancakeHttpClient.getRaw()` skips `response.ok` validation
    - Only `address-lookup-tool.ts` uses getRaw
    - Mitigation: Replace with `client.get()` or add error check
+
+3. **address-lookup-tool 404 upstream:** All three actions (`provinces`, `districts`, `communes`) return 404 from Pancake. Handler wraps with deprecation message. Investigation deferred — see workaround in *Vietnam Address Handling* above.
 
 ### Minor Inconsistencies
 - `shop-info-tool.ts` uses `client.post("shop/update")` (unique pattern)
