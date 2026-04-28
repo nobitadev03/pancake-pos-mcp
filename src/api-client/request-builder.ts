@@ -41,9 +41,10 @@ export function buildRequestUrl(
   const globalPrefixes = ["/partners", "partners", "/address", "address"];
   const needsShopPrefix = !globalPrefixes.some((p) => path.startsWith(p));
   const safePath = encodePathSegments(path.replace(/^\//, ""));
-  const fullPath = needsShopPrefix ? `/shops/${shopId}/${safePath}` : `/${safePath}`;
+  const relativePath = needsShopPrefix ? `shops/${encodeURIComponent(shopId)}/${safePath}` : safePath;
+  const baseWithSlash = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
 
-  const url = new URL(fullPath, baseUrl);
+  const url = new URL(relativePath, baseWithSlash);
   url.searchParams.set("api_key", apiKey);
 
   if (queryParams) {
