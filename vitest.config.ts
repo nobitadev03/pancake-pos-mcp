@@ -9,6 +9,8 @@ export default defineConfig({
     cloudflareTest({
       main: "./src/worker.ts",
       miniflare: {
+        compatibilityDate: "2026-04-01",
+        compatibilityFlags: ["nodejs_compat"],
         bindings: {
           PANCAKE_API_KEY: "test-api-key",
           PANCAKE_SHOP_ID: "test-shop-id",
@@ -23,6 +25,8 @@ export default defineConfig({
       main: "./src/worker.ts",
       wrangler: { configPath: "./wrangler.toml" },
       miniflare: {
+        compatibilityDate: "2026-04-01",
+        compatibilityFlags: ["nodejs_compat"],
         bindings: {
           PANCAKE_API_KEY: "test-api-key",
           PANCAKE_SHOP_ID: "test-shop-id",

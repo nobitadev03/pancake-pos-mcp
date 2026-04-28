@@ -1,7 +1,60 @@
 import { z } from "zod";
 import type { PancakeHttpClient } from "../api-client/pancake-http-client.js";
 import { formatPaginatedResult } from "../shared/pagination-helpers.js";
-import { PaginationParams, DateRangeParams } from "../shared/schemas.js";
+import {
+  PaginationParams,
+  DateRangeParams,
+  VietnamAddressSchema,
+  type VietnamAddress,
+} from "../shared/schemas.js";
+
+const CreateShippingAddressSchema = VietnamAddressSchema.extend({
+  full_name: z.string(),
+  phone_number: z.string(),
+  address: z.string(),
+});
+
+const LOCATION_FIELDS = [
+  "province_id",
+  "district_id",
+  "commune_id",
+  "new_province_id",
+  "new_commune_id",
+] as const;
+
+// Fields verified to silent-drop on at least one shop with api_key auth.
+// After PUT we GET the order to detect silent-drop and warn the caller.
+const FRAGILE_FIELDS = ["shipping_fee", "partner_fee", "is_free_shipping"] as const;
+type FragileField = (typeof FRAGILE_FIELDS)[number];
+
+const WORKAROUND_HINTS: Record<FragileField, string> = {
+  shipping_fee: "Try sending with is_free_shipping=false on shops that require it.",
+  partner_fee: "Try sending shipping_fee together with partner_fee.",
+  is_free_shipping: "Some shops require an explicit shipping_fee value alongside this flag.",
+};
+
+// Enforce at least one province anchor (OLD or NEW) when caller intends to set
+// location. Pure contact updates (phone_number/full_name only) bypass.
+function assertAddressHasLocation(addr: VietnamAddress, mode: "create" | "update"): void {
+  const hasOld = !!addr.province_id;
+  const hasNew = !!addr.new_province_id;
+  const sentAnyLocation = LOCATION_FIELDS.some((k) => addr[k] !== undefined);
+
+  if (mode === "create") {
+    if (!hasOld && !hasNew) {
+      throw new Error(
+        "Create order: shipping_address requires province_id (OLD format) or new_province_id (NEW format post-2025-07-01).",
+      );
+    }
+    return;
+  }
+
+  if (sentAnyLocation && !hasOld && !hasNew) {
+    throw new Error(
+      "Update shipping_address: when sending location fields, at least province_id (OLD) or new_province_id (NEW) is required. Pure contact updates (phone_number, full_name) are OK.",
+    );
+  }
+}
 
 const ListAction = z.object({
   action: z.literal("list"),
@@ -41,15 +94,9 @@ const CreateAction = z.object({
   note: z.string().optional().describe("Order note"),
   note_print: z.string().optional().describe("Note printed on order"),
   warehouse_id: z.string().describe("Warehouse UUID for order fulfillment"),
-  shipping_address: z.object({
-    full_name: z.string(),
-    phone_number: z.string(),
-    address: z.string(),
-    province_id: z.string(),
-    district_id: z.string(),
-    commune_id: z.string(),
-    country_code: z.number().optional(),
-  }).describe("Shipping address"),
+  shipping_address: CreateShippingAddressSchema.describe(
+    "Shipping address. Use OLD format (province_id+district_id+commune_id) for pre-2025-07-01 IDs or NEW format (new_province_id+new_commune_id) post-reform. At least one province anchor required.",
+  ),
   shipping_fee: z.number().optional(),
   total_discount: z.number().optional(),
   surcharge: z.number().optional(),
@@ -62,16 +109,28 @@ const UpdateAction = z.object({
   action: z.literal("update"),
   order_id: z.number().int().describe("Order ID to update"),
   status: z.number().int().optional().describe("New order status"),
-  shipping_address: z.object({
-    full_name: z.string().optional(),
-    phone_number: z.string().optional(),
-    address: z.string().optional(),
-    province_id: z.string().optional(),
-    district_id: z.string().optional(),
-    commune_id: z.string().optional(),
-  }).optional(),
+  shipping_address: VietnamAddressSchema.optional().describe(
+    "Update shipping address. Send only fields to change. Mix OLD/NEW format as needed. Pure contact-only updates (phone_number, full_name) are allowed.",
+  ),
   note: z.string().optional(),
   tags: z.array(z.number().int()).optional(),
+  shipping_fee: z.number().optional().describe(
+    "Shipping fee. On some shops the backend silently drops this when sent alone — Phase 5 verify-after-update will surface a warning. Try sending with is_free_shipping together if dropped.",
+  ),
+  partner_fee: z.number().optional().describe(
+    "Partner shipping fee. Often auto-syncs with shipping_fee on backend.",
+  ),
+  is_free_shipping: z.boolean().optional().describe(
+    "Free shipping flag. Some shops require sending alongside shipping_fee value.",
+  ),
+  total_discount: z.number().optional(),
+  surcharge: z.number().optional(),
+  note_print: z.string().optional().describe("Note printed on order receipt"),
+  received_at_shop: z.boolean().optional().describe("Customer pickup at shop"),
+  custom_id: z.string().optional(),
+  bill_email: z.string().optional(),
+  // NOTE: customer_pay_fee intentionally excluded — Pancake api_key auth
+  // silently drops this field (verified 2026-04-28 on shop 123456789).
 });
 
 const DeleteAction = z.object({
@@ -131,13 +190,45 @@ export async function handleOrdersTool(args: OrdersToolInput, client: PancakeHtt
     }
     case "create": {
       const { action, ...body } = args;
+      assertAddressHasLocation(body.shipping_address, "create");
       const result = await client.post("orders", body);
       return result.data;
     }
     case "update": {
       const { action, order_id, ...body } = args;
-      const result = await client.put(`orders/${order_id}`, body);
-      return result.data;
+      if (body.shipping_address) {
+        assertAddressHasLocation(body.shipping_address, "update");
+      }
+      const putResult = await client.put<Record<string, unknown>>(`orders/${order_id}`, body);
+
+      const sentFragile = FRAGILE_FIELDS.filter(
+        (k) => (body as Record<string, unknown>)[k] !== undefined,
+      );
+      if (sentFragile.length === 0) {
+        return putResult.data;
+      }
+
+      const warnings: string[] = [];
+      try {
+        const verify = await client.get<Record<string, unknown>>(`orders/${order_id}`);
+        for (const field of sentFragile) {
+          const sent = (body as Record<string, unknown>)[field];
+          const got = verify.data[field];
+          if (sent !== got) {
+            warnings.push(
+              `Field '${field}' silently dropped: sent ${JSON.stringify(sent)}, ` +
+                `current ${JSON.stringify(got)}. ${WORKAROUND_HINTS[field]}`,
+            );
+          }
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        warnings.push(`verify-after-update GET failed: ${msg}`);
+      }
+
+      return warnings.length > 0
+        ? { ...putResult.data, warnings }
+        : putResult.data;
     }
     case "delete": {
       await client.delete(`orders/${args.order_id}`);

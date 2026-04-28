@@ -35,3 +35,25 @@ export interface PaginationMeta {
   total: number;
   totalPages: number;
 }
+
+// Vietnam address schema — supports both OLD (3-tier, pre-2025-07-01) and NEW
+// (2-tier, post-2025-07-01 administrative reform) formats simultaneously.
+// All fields optional — callsites use `.extend({...})` to mark required fields
+// (e.g. full_name on Create actions). Cross-field validation (at least one
+// location anchor present) lives in handler layer, not Zod.
+export const VietnamAddressSchema = z.object({
+  full_name: z.string().optional(),
+  phone_number: z.string().optional(),
+  address: z.string().optional().describe("Street address (house number, street name)"),
+  country_code: z.number().optional().describe("Country code, default 84 for Vietnam"),
+  // OLD format (pre-2025-07-01, 3-tier: province → district → commune)
+  province_id: z.string().optional().describe("OLD format province ID (e.g. '701')"),
+  district_id: z.string().optional().describe("OLD format district ID (3-tier only)"),
+  commune_id: z.string().optional().describe("OLD format commune/ward ID (3-tier only)"),
+  // NEW format (post-2025-07-01, 2-tier: province → commune; district level removed)
+  new_province_id: z.string().optional().describe("NEW format province ID (e.g. '84_VN129')"),
+  new_commune_id: z.string().optional().describe("NEW format commune/ward ID (no district level)"),
+  new_full_address: z.string().optional().describe("NEW format pre-formatted full address"),
+});
+
+export type VietnamAddress = z.infer<typeof VietnamAddressSchema>;
