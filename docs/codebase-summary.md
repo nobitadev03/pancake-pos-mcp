@@ -356,6 +356,24 @@ endpoints return 404 on both pos.pages.fm and pos.pancake.vn with both api_key
 and JWT, verified 2026-04-28). Tool surface kept for forward-compat; handler
 intercepts 404 and throws a structured deprecation message. Workaround above.
 
+### NEW format coverage (verified 2026-04-28)
+
+| Entity | OLD fields in response | NEW (`new_*`) fields | Notes |
+|---|---|---|---|
+| `orders` | ✓ | ✓ | Dual-format applied in `VietnamAddressSchema` (see Phase 2 of `plans/260428-1730-orders-address-schema-overhaul/`) |
+| `customers` | ✓ via `shop_customer_addresses[]` (note: not `addresses[]`) | ✗ | Pancake has not migrated this endpoint to 2-tier yet |
+| `warehouses` | ✓ flat fields | ✗ | Same — OLD only |
+| `shop-info` | unknown | unknown | GET endpoint `/shops/{id}/shop` returns HTTP 404 — separate upstream issue |
+
+Phase 3 of the address overhaul plan (apply `VietnamAddressSchema` to
+customers/warehouses/shop-info) was **cancelled** rather than deferred:
+exposing `new_*` fields on these tools would let LLMs send IDs the backend
+silently drops. Re-evaluate when Pancake migrates the remaining endpoints.
+
+**`shop-info-tool` GET is also known-broken** — `/shops/{id}/shop` returns 404
+on shop 123456789 with api_key. Update path (`shop/update`) untested. Not
+wrapped with deprecation interceptor yet — investigation pending.
+
 ---
 
 ## Known Issues & Patterns

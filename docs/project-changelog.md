@@ -17,7 +17,7 @@ Plan: `plans/260428-1730-orders-address-schema-overhaul/`
 
 ### Excluded (verified silent-drop / out of scope)
 - `customer_pay_fee` on `orders update` — Pancake api_key auth silently ignores this field (verified 2026-04-28 on shop 123456789). Schema rejects it.
-- Phase 3 (apply VietnamAddressSchema to customers/warehouses/shop-info) deferred to a separate plan pending shape verification.
+- Phase 3 (apply VietnamAddressSchema to customers/warehouses/shop-info) **cancelled** after shape verification on 2026-04-28: customers uses `shop_customer_addresses[]` (not `addresses[]`); none of the three endpoints expose `new_*` fields in responses. Pancake has not migrated those endpoints to the 2-tier reform. Bonus: `shop-info-tool` GET endpoint `/shops/{id}/shop` returns HTTP 404 — separate broken endpoint, not yet wrapped.
 
 ### Deprecated
 - `address-lookup-tool` (`provinces`, `districts`, `communes`) — endpoints return 404 upstream on both pos.pages.fm and pos.pancake.vn with api_key and JWT. Workaround: extract IDs from existing entity responses (orders.get → `shipping_address`).

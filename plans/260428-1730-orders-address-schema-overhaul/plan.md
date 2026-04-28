@@ -29,7 +29,7 @@ Fix MCP wrapper để: (1) update được phí vận chuyển + financial field
 | 0 | [Pre-flight verification](./phase-00-preflight-verification.md) | Completed |
 | 1 | [Shared address schema](./phase-01-shared-address-schema.md) | Completed |
 | 2 | [Apply schema to orders-tool](./phase-02-apply-schema-to-orders-tool.md) | Completed |
-| 3 | [Apply schema to customers/warehouses/shop-info](./phase-03-apply-schema-to-customers-warehouses-shop-info.md) | Deferred (separate plan) |
+| 3 | [Apply schema to customers/warehouses/shop-info](./phase-03-apply-schema-to-customers-warehouses-shop-info.md) | Cancelled (2026-04-28 — shape verified: 3 endpoints OLD-only, no `new_*` fields; customers uses `shop_customer_addresses[]`; shop-info GET 404) |
 | 4 | [Expand UpdateAction order financial fields](./phase-04-expand-updateaction-order-financial-fields.md) | Completed |
 | 5 | [Verify-after-update for order updates](./phase-05-verify-after-update-for-order-updates.md) | Completed |
 | 6 | [Mark address-lookup broken & docs](./phase-06-mark-address-lookup-broken-docs.md) | Completed |
