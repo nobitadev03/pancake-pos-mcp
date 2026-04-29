@@ -1,1 +1,0 @@
-- [Pancake POS patterns & known bugs](project-pancake-patterns.md) — Tool conventions, path traversal bug in request-builder, getRaw error gap, promotions UpdateAction missing field

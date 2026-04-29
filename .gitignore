@@ -39,3 +39,8 @@ repomix-output.xml
 # Cloudflare Workers
 .dev.vars
 .wrangler/
+
+# Internal / personal
+.claude/
+plans/
+.gitkeep
