@@ -24,7 +24,7 @@ const CreateAction = z.object({
   title: z.string().describe("Activity title or subject"),
   description: z.string().optional(),
   scheduled_at: z.string().optional().describe("Scheduled time (ISO datetime)"),
-  duration_minutes: z.number().int().optional().describe("Duration in minutes"),
+  duration_minutes: z.coerce.number().int().optional().describe("Duration in minutes"),
 });
 
 const UpdateAction = z.object({
@@ -33,7 +33,7 @@ const UpdateAction = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
   scheduled_at: z.string().optional(),
-  duration_minutes: z.number().int().optional(),
+  duration_minutes: z.coerce.number().int().optional(),
   is_completed: z.boolean().optional(),
 });
 

@@ -5,14 +5,14 @@ import { PaginationParams } from "../shared/schemas.js";
 
 const ReturnedItem = z.object({
   variation_id: z.string(),
-  quantity: z.number().int().min(1),
-  price: z.number().optional(),
+  quantity: z.coerce.number().int().min(1),
+  price: z.coerce.number().optional(),
 });
 
 const ExchangeItem = z.object({
   variation_id: z.string(),
-  quantity: z.number().int().min(1),
-  price: z.number().optional(),
+  quantity: z.coerce.number().int().min(1),
+  price: z.coerce.number().optional(),
 });
 
 const ListAction = z.object({
@@ -28,11 +28,11 @@ const GetAction = z.object({
 
 const CreateAction = z.object({
   action: z.literal("create"),
-  order_id_to_returned: z.number().int().describe("Original order ID being returned"),
+  order_id_to_returned: z.coerce.number().int().describe("Original order ID being returned"),
   returned_items: z.array(ReturnedItem).min(1).describe("Items to return"),
   warehouse_id: z.string().describe("Warehouse UUID for returned stock"),
-  discount: z.number().optional().describe("Discount on return"),
-  returned_fee: z.number().optional().describe("Return shipping fee"),
+  discount: z.coerce.number().optional().describe("Discount on return"),
+  returned_fee: z.coerce.number().optional().describe("Return shipping fee"),
   note: z.string().optional(),
   is_exchange: z.boolean().optional().describe("True if this is an exchange (return + new items)"),
   exchange_items: z.array(ExchangeItem).optional().describe("New items for exchange (required if is_exchange=true)"),
@@ -41,7 +41,7 @@ const CreateAction = z.object({
 const UpdateAction = z.object({
   action: z.literal("update"),
   return_id: z.string().describe("Return ID to update"),
-  status: z.number().int().optional(),
+  status: z.coerce.number().int().optional(),
   note: z.string().optional(),
 });
 

@@ -4,11 +4,11 @@ import type { PancakeHttpClient } from "../api-client/pancake-http-client.js";
 const ReportAction = z.object({
   action: z.literal("report"),
   warehouse_ids: z.array(z.string()).optional().describe("Filter by warehouse UUIDs"),
-  category_ids: z.array(z.number().int()).optional().describe("Filter by category IDs"),
+  category_ids: z.array(z.coerce.number().int()).optional().describe("Filter by category IDs"),
   supplier_ids: z.array(z.string()).optional().describe("Filter by supplier UUIDs"),
-  brand_ids: z.array(z.number().int()).optional().describe("Filter by brand IDs"),
-  min_quantity: z.number().optional().describe("Minimum stock quantity"),
-  max_quantity: z.number().optional().describe("Maximum stock quantity"),
+  brand_ids: z.array(z.coerce.number().int()).optional().describe("Filter by brand IDs"),
+  min_quantity: z.coerce.number().optional().describe("Minimum stock quantity"),
+  max_quantity: z.coerce.number().optional().describe("Maximum stock quantity"),
   include_hidden: z.boolean().optional().describe("Include hidden products"),
 });
 

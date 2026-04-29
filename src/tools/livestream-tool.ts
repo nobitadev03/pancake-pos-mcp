@@ -28,7 +28,7 @@ const UpdateAction = z.object({
   name: z.string().optional(),
   scheduled_at: z.string().optional(),
   description: z.string().optional(),
-  status: z.number().int().optional().describe("Livestream status"),
+  status: z.coerce.number().int().optional().describe("Livestream status"),
   product_ids: z.array(z.string()).optional(),
 });
 

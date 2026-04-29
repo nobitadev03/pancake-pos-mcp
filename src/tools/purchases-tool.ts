@@ -5,8 +5,8 @@ import { PaginationParams, DateRangeParams } from "../shared/schemas.js";
 
 const PurchaseItem = z.object({
   variation_id: z.string().describe("Product variation UUID"),
-  quantity: z.number().int().min(1),
-  price: z.number().optional().describe("Purchase price per unit"),
+  quantity: z.coerce.number().int().min(1),
+  price: z.coerce.number().optional().describe("Purchase price per unit"),
 });
 
 const ListAction = z.object({
@@ -29,16 +29,16 @@ const CreateAction = z.object({
   warehouse_id: z.string().describe("Destination warehouse UUID"),
   items: z.array(PurchaseItem).min(1).describe("Items to purchase"),
   note: z.string().optional(),
-  discount: z.number().optional().describe("Total discount on purchase"),
+  discount: z.coerce.number().optional().describe("Total discount on purchase"),
   expected_at: z.string().optional().describe("Expected delivery date (ISO datetime)"),
 });
 
 const UpdateAction = z.object({
   action: z.literal("update"),
   purchase_id: z.string().describe("Purchase order ID to update"),
-  status: z.number().int().optional().describe("Purchase status"),
+  status: z.coerce.number().int().optional().describe("Purchase status"),
   note: z.string().optional(),
-  discount: z.number().optional(),
+  discount: z.coerce.number().optional(),
   items: z.array(PurchaseItem).optional(),
 });
 

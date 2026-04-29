@@ -5,7 +5,7 @@ import { PaginationParams } from "../shared/schemas.js";
 
 const TransferItem = z.object({
   variation_id: z.string().describe("Product variation UUID"),
-  quantity: z.number().int().min(1),
+  quantity: z.coerce.number().int().min(1),
 });
 
 const ListAction = z.object({
@@ -31,7 +31,7 @@ const CreateAction = z.object({
 const UpdateAction = z.object({
   action: z.literal("update"),
   transfer_id: z.string().describe("Transfer ID to update"),
-  status: z.number().int().optional().describe("Transfer status"),
+  status: z.coerce.number().int().optional().describe("Transfer status"),
   note: z.string().optional(),
   items: z.array(TransferItem).optional(),
 });

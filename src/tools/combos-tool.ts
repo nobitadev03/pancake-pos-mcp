@@ -5,13 +5,13 @@ import { PaginationParams } from "../shared/schemas.js";
 
 const ComboVariation = z.object({
   variation_id: z.string().describe("Product variation UUID included in combo"),
-  quantity: z.number().int().min(1),
-  discount_amount: z.number().optional().describe("Per-item discount within combo"),
+  quantity: z.coerce.number().int().min(1),
+  discount_amount: z.coerce.number().optional().describe("Per-item discount within combo"),
 });
 
 const BonusProduct = z.object({
   variation_id: z.string().describe("Bonus product variation UUID"),
-  quantity: z.number().int().min(1),
+  quantity: z.coerce.number().int().min(1),
 });
 
 const ListAction = z.object({
@@ -28,26 +28,26 @@ const GetAction = z.object({
 const CreateAction = z.object({
   action: z.literal("create"),
   name: z.string().describe("Combo name"),
-  discount_amount: z.number().optional().describe("Total combo discount amount"),
+  discount_amount: z.coerce.number().optional().describe("Total combo discount amount"),
   is_free_shipping: z.boolean().optional(),
   variations: z.array(ComboVariation).min(1).describe("Products included in combo"),
   bonus_products: z.array(BonusProduct).optional().describe("Free bonus items with combo"),
-  start_time: z.number().int().optional().describe("Combo start time (unix timestamp)"),
-  end_time: z.number().int().optional().describe("Combo end time (unix timestamp)"),
-  order_sources: z.array(z.number().int()).optional().describe("Applicable order source codes"),
+  start_time: z.coerce.number().int().optional().describe("Combo start time (unix timestamp)"),
+  end_time: z.coerce.number().int().optional().describe("Combo end time (unix timestamp)"),
+  order_sources: z.array(z.coerce.number().int()).optional().describe("Applicable order source codes"),
 });
 
 const UpdateAction = z.object({
   action: z.literal("update"),
   combo_id: z.string().describe("Combo ID to update"),
   name: z.string().optional(),
-  discount_amount: z.number().optional(),
+  discount_amount: z.coerce.number().optional(),
   is_free_shipping: z.boolean().optional(),
   variations: z.array(ComboVariation).optional(),
   bonus_products: z.array(BonusProduct).optional(),
-  start_time: z.number().int().optional(),
-  end_time: z.number().int().optional(),
-  order_sources: z.array(z.number().int()).optional(),
+  start_time: z.coerce.number().int().optional(),
+  end_time: z.coerce.number().int().optional(),
+  order_sources: z.array(z.coerce.number().int()).optional(),
 });
 
 const DeleteAction = z.object({

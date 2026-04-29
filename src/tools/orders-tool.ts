@@ -59,12 +59,12 @@ function assertAddressHasLocation(addr: VietnamAddress, mode: "create" | "update
 const ListAction = z.object({
   action: z.literal("list"),
   search: z.string().optional().describe("Search by phone, customer name, note, or order code"),
-  filter_status: z.array(z.number().int()).optional().describe("Filter by status codes (e.g. [0,1])"),
+  filter_status: z.array(z.coerce.number().int()).optional().describe("Filter by status codes (e.g. [0,1])"),
   include_removed: z.literal(1).optional().describe("Set to 1 to include deleted orders"),
   updateStatus: z.string().optional().describe("Filter by time type: inserted_at, updated_at, paid_at, etc."),
   option_sort: z.string().optional().describe("Sort order, e.g. inserted_at_desc, order_valuation_desc"),
   fields: z.array(z.string()).optional().describe("Specific fields to return"),
-  partner_id: z.array(z.number().int()).optional().describe("Filter by shipping partner IDs"),
+  partner_id: z.array(z.coerce.number().int()).optional().describe("Filter by shipping partner IDs"),
   customer_id: z.string().optional().describe("Filter by customer UUID"),
   order_sources: z.array(z.array(z.string())).optional().describe("Filter by source [[source_code, account_id]]"),
   ...PaginationParams.shape,
@@ -73,7 +73,7 @@ const ListAction = z.object({
 
 const GetAction = z.object({
   action: z.literal("get"),
-  order_id: z.number().int().describe("Order ID"),
+  order_id: z.coerce.number().int().describe("Order ID"),
 });
 
 const CreateAction = z.object({
@@ -84,10 +84,10 @@ const CreateAction = z.object({
   is_free_shipping: z.boolean().optional(),
   received_at_shop: z.boolean().optional().describe("Customer picks up at shop"),
   items: z.array(z.object({
-    quantity: z.number().int().min(1),
+    quantity: z.coerce.number().int().min(1),
     variation_id: z.string(),
     product_id: z.string(),
-    discount_each_product: z.number().optional(),
+    discount_each_product: z.coerce.number().optional(),
     is_bonus_product: z.boolean().optional(),
     note: z.string().optional(),
   })).min(1).describe("Order items"),
@@ -97,34 +97,34 @@ const CreateAction = z.object({
   shipping_address: CreateShippingAddressSchema.describe(
     "Shipping address. Use OLD format (province_id+district_id+commune_id) for pre-2025-07-01 IDs or NEW format (new_province_id+new_commune_id) post-reform. At least one province anchor required.",
   ),
-  shipping_fee: z.number().optional(),
-  total_discount: z.number().optional(),
-  surcharge: z.number().optional(),
+  shipping_fee: z.coerce.number().optional(),
+  total_discount: z.coerce.number().optional(),
+  surcharge: z.coerce.number().optional(),
   custom_id: z.string().optional().describe("Custom order ID"),
   customer_pay_fee: z.boolean().optional(),
-  tags: z.array(z.number().int()).optional(),
+  tags: z.array(z.coerce.number().int()).optional(),
 });
 
 const UpdateAction = z.object({
   action: z.literal("update"),
-  order_id: z.number().int().describe("Order ID to update"),
-  status: z.number().int().optional().describe("New order status"),
+  order_id: z.coerce.number().int().describe("Order ID to update"),
+  status: z.coerce.number().int().optional().describe("New order status"),
   shipping_address: VietnamAddressSchema.optional().describe(
     "Update shipping address. Send only fields to change. Mix OLD/NEW format as needed. Pure contact-only updates (phone_number, full_name) are allowed.",
   ),
   note: z.string().optional(),
-  tags: z.array(z.number().int()).optional(),
-  shipping_fee: z.number().optional().describe(
+  tags: z.array(z.coerce.number().int()).optional(),
+  shipping_fee: z.coerce.number().optional().describe(
     "Shipping fee. On some shops the backend silently drops this when sent alone — Phase 5 verify-after-update will surface a warning. Try sending with is_free_shipping together if dropped.",
   ),
-  partner_fee: z.number().optional().describe(
+  partner_fee: z.coerce.number().optional().describe(
     "Partner shipping fee. Often auto-syncs with shipping_fee on backend.",
   ),
   is_free_shipping: z.boolean().optional().describe(
     "Free shipping flag. Some shops require sending alongside shipping_fee value.",
   ),
-  total_discount: z.number().optional(),
-  surcharge: z.number().optional(),
+  total_discount: z.coerce.number().optional(),
+  surcharge: z.coerce.number().optional(),
   note_print: z.string().optional().describe("Note printed on order receipt"),
   received_at_shop: z.boolean().optional().describe("Customer pickup at shop"),
   custom_id: z.string().optional(),
@@ -135,23 +135,23 @@ const UpdateAction = z.object({
 
 const DeleteAction = z.object({
   action: z.literal("delete"),
-  order_id: z.number().int().describe("Order ID to delete (only status=0 orders)"),
+  order_id: z.coerce.number().int().describe("Order ID to delete (only status=0 orders)"),
 });
 
 const PrintAction = z.object({
   action: z.literal("print"),
-  order_id: z.number().int().describe("Order ID to print"),
+  order_id: z.coerce.number().int().describe("Order ID to print"),
   template: z.enum(["default", "a5", "label"]).optional().describe("Print template"),
 });
 
 const ShipAction = z.object({
   action: z.literal("ship"),
-  order_id: z.number().int().describe("Order ID to ship"),
-  partner_id: z.number().int().describe("Shipping partner ID"),
+  order_id: z.coerce.number().int().describe("Order ID to ship"),
+  partner_id: z.coerce.number().int().describe("Shipping partner ID"),
   customer_pay_fee: z.boolean().optional(),
   note_print: z.string().optional(),
-  service_type_id: z.number().int().optional().describe("Service type (2=standard)"),
-  pick_shift: z.array(z.number().int()).optional(),
+  service_type_id: z.coerce.number().int().optional().describe("Service type (2=standard)"),
+  pick_shift: z.array(z.coerce.number().int()).optional(),
   required_note: z.string().optional().describe("Delivery requirement note"),
 });
 

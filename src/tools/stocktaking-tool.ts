@@ -5,7 +5,7 @@ import { PaginationParams } from "../shared/schemas.js";
 
 const StocktakingItem = z.object({
   variation_id: z.string().describe("Product variation UUID"),
-  actual_quantity: z.number().int().min(0).describe("Physically counted quantity"),
+  actual_quantity: z.coerce.number().int().min(0).describe("Physically counted quantity"),
 });
 
 const ListAction = z.object({
@@ -29,7 +29,7 @@ const CreateAction = z.object({
 const UpdateAction = z.object({
   action: z.literal("update"),
   stocktaking_id: z.string().describe("Stocktaking ID to update"),
-  status: z.number().int().optional().describe("Stocktaking status"),
+  status: z.coerce.number().int().optional().describe("Stocktaking status"),
   note: z.string().optional(),
   items: z.array(StocktakingItem).optional(),
 });

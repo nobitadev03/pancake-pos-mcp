@@ -19,11 +19,11 @@ const CreateAction = z.object({
   code: z.string().describe("Voucher code (unique)"),
   name: z.string().optional().describe("Voucher display name"),
   discount_type: z.enum(["percent", "amount"]).optional().describe("Discount type: percent or fixed amount"),
-  discount_value: z.number().optional().describe("Discount value"),
-  minimum_order_value: z.number().optional().describe("Minimum order value to use voucher"),
-  max_usage: z.number().int().optional().describe("Maximum number of times voucher can be used"),
-  start_time: z.number().int().optional().describe("Start time (unix timestamp)"),
-  end_time: z.number().int().optional().describe("End time (unix timestamp)"),
+  discount_value: z.coerce.number().optional().describe("Discount value"),
+  minimum_order_value: z.coerce.number().optional().describe("Minimum order value to use voucher"),
+  max_usage: z.coerce.number().int().optional().describe("Maximum number of times voucher can be used"),
+  start_time: z.coerce.number().int().optional().describe("Start time (unix timestamp)"),
+  end_time: z.coerce.number().int().optional().describe("End time (unix timestamp)"),
   is_active: z.boolean().optional(),
 });
 
@@ -32,11 +32,11 @@ const UpdateAction = z.object({
   voucher_id: z.string().describe("Voucher ID to update"),
   name: z.string().optional(),
   discount_type: z.enum(["percent", "amount"]).optional(),
-  discount_value: z.number().optional(),
-  minimum_order_value: z.number().optional(),
-  max_usage: z.number().int().optional(),
-  start_time: z.number().int().optional(),
-  end_time: z.number().int().optional(),
+  discount_value: z.coerce.number().optional(),
+  minimum_order_value: z.coerce.number().optional(),
+  max_usage: z.coerce.number().int().optional(),
+  start_time: z.coerce.number().int().optional(),
+  end_time: z.coerce.number().int().optional(),
   is_active: z.boolean().optional(),
 });
 

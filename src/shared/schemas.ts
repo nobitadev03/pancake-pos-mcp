@@ -2,14 +2,14 @@ import { z } from "zod";
 
 // Pagination parameters used across all list endpoints
 export const PaginationParams = z.object({
-  page_number: z.number().int().positive().optional().describe("Page number (default 1)"),
-  page_size: z.number().int().min(1).max(200).optional().describe("Items per page (default 30, max 200)"),
+  page_number: z.coerce.number().int().positive().optional().describe("Page number (default 1)"),
+  page_size: z.coerce.number().int().min(1).max(200).optional().describe("Items per page (default 30, max 200)"),
 });
 
 // Date range filter for order/transaction queries
 export const DateRangeParams = z.object({
-  startDateTime: z.number().int().optional().describe("Start date as unix timestamp"),
-  endDateTime: z.number().int().optional().describe("End date as unix timestamp"),
+  startDateTime: z.coerce.number().int().optional().describe("Start date as unix timestamp"),
+  endDateTime: z.coerce.number().int().optional().describe("End date as unix timestamp"),
 });
 
 // Standard paginated response from Pancake API
@@ -45,7 +45,7 @@ export const VietnamAddressSchema = z.object({
   full_name: z.string().optional(),
   phone_number: z.string().optional(),
   address: z.string().optional().describe("Street address (house number, street name)"),
-  country_code: z.number().optional().describe("Country code, default 84 for Vietnam"),
+  country_code: z.coerce.number().optional().describe("Country code, default 84 for Vietnam"),
   // OLD format (pre-2025-07-01, 3-tier: province → district → commune)
   province_id: z.string().optional().describe("OLD format province ID (e.g. '701')"),
   district_id: z.string().optional().describe("OLD format district ID (3-tier only)"),
