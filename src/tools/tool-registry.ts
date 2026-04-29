@@ -53,10 +53,22 @@ export function registerAllTools(server: McpServer, client: PancakeHttpClient): 
       bill_phone_number: z.string().optional().describe("Buyer phone (required for create)"),
       items: z.array(z.object({ quantity: z.number(), variation_id: z.string(), product_id: z.string() })).optional().describe("Order items (required for create)"),
       warehouse_id: z.string().optional().describe("Warehouse UUID"),
-      shipping_address: z.record(z.string(), z.unknown()).optional().describe("Shipping address object"),
+      shipping_address: z.record(z.string(), z.unknown()).optional().describe(
+        "Shipping address. Fields: full_name, phone_number, address (street). Location: OLD format (province_id+district_id+commune_id) or NEW format post-2025-07-01 (new_province_id+new_commune_id; no district level). Server detects format by ID prefix.",
+      ),
       note: z.string().optional(),
       status: z.number().int().optional().describe("Status for update"),
       tags: z.array(z.number().int()).optional(),
+      // update — financial fields (note: customer_pay_fee is silently dropped by api_key auth, do not send)
+      shipping_fee: z.number().optional().describe("Shipping fee (update). Some shops require sending is_free_shipping together — verify-after-update will warn on silent-drop."),
+      partner_fee: z.number().optional().describe("Partner shipping fee (update)."),
+      is_free_shipping: z.boolean().optional().describe("Free shipping flag (create/update)."),
+      total_discount: z.number().optional().describe("Total order discount (create/update)."),
+      surcharge: z.number().optional().describe("Order surcharge (create/update)."),
+      note_print: z.string().optional().describe("Note printed on order receipt (create/update/ship)."),
+      received_at_shop: z.boolean().optional().describe("Customer pickup at shop (create/update)."),
+      custom_id: z.string().optional().describe("Custom order ID (create/update)."),
+      bill_email: z.string().optional().describe("Buyer email (create/update)."),
       // ship params
       partner_id: z.number().int().optional().describe("Shipping partner ID (required for ship)"),
       // call_later params
