@@ -2,31 +2,22 @@ import { z } from "zod";
 import type { PancakeHttpClient } from "../api-client/pancake-http-client.js";
 
 /**
- * KNOWN BROKEN: Pancake API endpoints `/address/provinces`, `/address/districts/{id}`,
- * `/address/communes/{id}` return HTTP 404 on both pos.pages.fm and pos.pancake.vn,
- * with both api_key and JWT authentication (verified 2026-04-28).
+ * Vietnamese address lookup via Pancake `/geo/*` endpoints (verified 2026-04-28
+ * on both pos.pages.fm and pos.pancake.vn with api_key).
  *
- * Tool surface kept for LLM-discoverability and forward-compat in case Pancake
- * restores the endpoints. Handler intercepts 404 and returns a structured
- * deprecation message with a workaround hint.
+ * The server is polymorphic on `province_id`:
+ * - OLD value (e.g. "805") → returns OLD 3-tier shape (commune items have
+ *   `district_id` filled and a `new_id` field mapping to the NEW commune ID).
+ * - NEW value (e.g. "84_VN132") → returns NEW 2-tier shape (commune items have
+ *   `district_id: null`).
  *
- * Workaround: obtain location IDs from existing entities. Order GET response
- * includes `shipping_address.province_id` (OLD format) and
- * `shipping_address.new_province_id` / `new_commune_id` (NEW format post-2025-07-01).
+ * `district_id` filter is OLD-only (the post-2025-07-01 administrative reform
+ * removed the district level).
+ *
+ * Note: this previously hit `/address/*` paths which now return 404. The
+ * `/geo/*` rename was discovered via Pancake POS web UI capture; behavior
+ * confirmed by curl probes.
  */
-
-const DEPRECATION_NOTE =
-  "address-lookup endpoint is currently unavailable upstream (HTTP 404, verified 2026-04-28). " +
-  "Workaround: extract location IDs from existing entities — e.g. orders.get response " +
-  "includes shipping_address.province_id (OLD) or shipping_address.new_province_id / " +
-  "new_commune_id (NEW format post-2025-07-01). Investigation deferred to a separate plan.";
-
-function is404(err: unknown): boolean {
-  if (typeof err !== "object" || err === null) return false;
-  const e = err as { status?: number; message?: string };
-  if (e.status === 404) return true;
-  return typeof e.message === "string" && /\b404\b/.test(e.message);
-}
 
 const ProvincesAction = z.object({
   action: z.literal("provinces"),
@@ -34,12 +25,20 @@ const ProvincesAction = z.object({
 
 const DistrictsAction = z.object({
   action: z.literal("districts"),
-  province_id: z.string().describe("Province ID to get districts for"),
+  province_id: z.string().describe(
+    "OLD-format province ID (e.g. '805'). NEW format has no districts.",
+  ),
 });
 
 const CommunesAction = z.object({
   action: z.literal("communes"),
-  district_id: z.string().describe("District ID to get communes for"),
+  province_id: z.string().optional().describe(
+    "Province ID — accepts OLD (e.g. '805') or NEW (e.g. '84_VN132'). " +
+      "Server detects prefix: OLD returns 3-tier list, NEW returns 2-tier (no district level).",
+  ),
+  district_id: z.string().optional().describe(
+    "OLD-format district ID — narrows OLD results to a single district. NEW format does not use this field.",
+  ),
 });
 
 export const addressLookupToolSchema = z.discriminatedUnion("action", [
@@ -50,26 +49,32 @@ export const addressLookupToolSchema = z.discriminatedUnion("action", [
 
 export type AddressLookupToolInput = z.infer<typeof addressLookupToolSchema>;
 
-export async function handleAddressLookupTool(args: AddressLookupToolInput, client: PancakeHttpClient) {
-  try {
-    switch (args.action) {
-      case "provinces": {
-        const result = await client.getRaw<unknown[]>("address/provinces");
-        return { data: result };
-      }
-      case "districts": {
-        const result = await client.getRaw<unknown[]>(`address/districts/${args.province_id}`);
-        return { data: result };
-      }
-      case "communes": {
-        const result = await client.getRaw<unknown[]>(`address/communes/${args.district_id}`);
-        return { data: result };
-      }
+export async function handleAddressLookupTool(
+  args: AddressLookupToolInput,
+  client: PancakeHttpClient,
+) {
+  switch (args.action) {
+    case "provinces": {
+      const result = await client.get<unknown[]>("geo/provinces");
+      return { data: result.data };
     }
-  } catch (err) {
-    if (is404(err)) {
-      throw new Error(DEPRECATION_NOTE);
+    case "districts": {
+      const result = await client.get<unknown[]>("geo/districts", {
+        province_id: args.province_id,
+      });
+      return { data: result.data };
     }
-    throw err;
+    case "communes": {
+      if (!args.province_id && !args.district_id) {
+        throw new Error(
+          "communes lookup requires at least one of province_id (OLD or NEW) or district_id (OLD).",
+        );
+      }
+      const params: Record<string, unknown> = {};
+      if (args.province_id) params.province_id = args.province_id;
+      if (args.district_id) params.district_id = args.district_id;
+      const result = await client.get<unknown[]>("geo/communes", params);
+      return { data: result.data };
+    }
   }
 }

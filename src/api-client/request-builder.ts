@@ -38,7 +38,7 @@ export function buildRequestUrl(
   queryParams?: Record<string, unknown>,
 ): string {
   // Paths that are not under /shops/{id}/ (global endpoints)
-  const globalPrefixes = ["/partners", "partners", "/address", "address"];
+  const globalPrefixes = ["/partners", "partners", "/address", "address", "/geo", "geo"];
   const needsShopPrefix = !globalPrefixes.some((p) => path.startsWith(p));
   const safePath = encodePathSegments(path.replace(/^\//, ""));
   const relativePath = needsShopPrefix ? `shops/${encodeURIComponent(shopId)}/${safePath}` : safePath;

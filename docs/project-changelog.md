@@ -1,5 +1,25 @@
 # Project Changelog
 
+## 2026-04-29 — address-lookup migrated `/address/*` → `/geo/*`
+
+Discovered via Pancake POS web UI network capture. Endpoint was renamed (not removed) and behavior subtly improved:
+
+- `GET /api/v1/geo/provinces` — 63 OLD provinces, each item carries a `new_id` field mapping to NEW format. No separate NEW provinces endpoint exists.
+- `GET /api/v1/geo/districts?province_id={OLD}` — OLD only. NEW format has no district level.
+- `GET /api/v1/geo/communes?district_id={OLD}` — OLD 3-tier in one district.
+- `GET /api/v1/geo/communes?province_id={OLD}` — OLD 3-tier across the province.
+- `GET /api/v1/geo/communes?province_id={NEW}` — NEW 2-tier; server detects the `84_VN...` prefix and returns 2-tier shape (`district_id: null`).
+
+Verified on both `pos.pages.fm` and `pos.pancake.vn` with api_key (no JWT needed).
+
+### Changed
+- `src/tools/address-lookup-tool.ts`: schema now allows `communes` with `province_id` (OLD or NEW) and/or `district_id` (OLD only); handler asserts at least one is present. Switched from `client.getRaw` to `client.get` to pick up `success: false` validation. Removed the 404 deprecation wrapper.
+- `src/api-client/request-builder.ts`: added `/geo` (with and without leading slash) to `globalPrefixes` so the path bypasses shop scope.
+- `tests/address-lookup-tool.test.ts`: replaced 3 deprecation tests with 14 cases covering schema, dispatch, validation, and request-builder URL shape.
+- `docs/codebase-summary.md`: replaced "known-broken" note with route reference; updated global-prefix list and Critical Issues #3.
+
+---
+
 ## 2026-04-28 — Orders update fields & VN address schema overhaul
 
 Plan: `plans/260428-1730-orders-address-schema-overhaul/`
@@ -20,7 +40,7 @@ Plan: `plans/260428-1730-orders-address-schema-overhaul/`
 - Phase 3 (apply VietnamAddressSchema to customers/warehouses/shop-info) **cancelled** after shape verification on 2026-04-28: customers uses `shop_customer_addresses[]` (not `addresses[]`); none of the three endpoints expose `new_*` fields in responses. Pancake has not migrated those endpoints to the 2-tier reform. Bonus: `shop-info-tool` GET endpoint `/shops/{id}/shop` returns HTTP 404 — separate broken endpoint, not yet wrapped.
 
 ### Deprecated
-- `address-lookup-tool` (`provinces`, `districts`, `communes`) — endpoints return 404 upstream on both pos.pages.fm and pos.pancake.vn with api_key and JWT. Workaround: extract IDs from existing entity responses (orders.get → `shipping_address`).
+- ~~`address-lookup-tool`~~ — superseded by `/geo/*` migration (see entry below dated 2026-04-29).
 
 ### Tests
 - `tests/shared-schemas.test.ts` — 7 cases for `VietnamAddressSchema`.

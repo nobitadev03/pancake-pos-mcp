@@ -351,10 +351,19 @@ fragile field (`shipping_fee`, `partner_fee`, `is_free_shipping`) was sent, GET
 the order and compare. Mismatches surface in `warnings: string[]` on the response,
 each with a workaround hint. Pancake silently drops these fields on some shops.
 
-**`address-lookup-tool` is currently known-broken upstream** (`/address/*`
-endpoints return 404 on both pos.pages.fm and pos.pancake.vn with both api_key
-and JWT, verified 2026-04-28). Tool surface kept for forward-compat; handler
-intercepts 404 and throws a structured deprecation message. Workaround above.
+**`address-lookup-tool` uses `/geo/*` endpoints** (verified 2026-04-28). The
+`/address/*` paths used previously return 404 — the rename was discovered via
+Pancake POS web UI capture. Routes:
+
+- `geo/provinces` — list 63 OLD provinces; each has a `new_id` field mapping to NEW.
+- `geo/districts?province_id={OLD}` — OLD-only (NEW has no district level).
+- `geo/communes?province_id={OLD}` — OLD 3-tier across all districts in the province.
+- `geo/communes?province_id={NEW}` — NEW 2-tier (server detects ID prefix).
+- `geo/communes?district_id={OLD}` — OLD 3-tier filtered to one district.
+
+Handler validates `communes` has at least one of `province_id`/`district_id`.
+`/geo` is registered as a global prefix in `request-builder.ts` so it bypasses
+shop scope.
 
 ### NEW format coverage (verified 2026-04-28)
 
@@ -387,7 +396,7 @@ wrapped with deprecation interceptor yet — investigation pending.
    - Only `address-lookup-tool.ts` uses getRaw
    - Mitigation: Replace with `client.get()` or add error check
 
-3. **address-lookup-tool 404 upstream:** All three actions (`provinces`, `districts`, `communes`) return 404 from Pancake. Handler wraps with deprecation message. Investigation deferred — see workaround in *Vietnam Address Handling* above.
+3. ~~**address-lookup-tool 404 upstream:**~~ Resolved 2026-04-28 — endpoint renamed `/address/*` → `/geo/*`. See *Vietnam Address Handling* above.
 
 ### Minor Inconsistencies
 - `shop-info-tool.ts` uses `client.post("shop/update")` (unique pattern)
@@ -395,7 +404,7 @@ wrapped with deprecation interceptor yet — investigation pending.
 - Discount values have no bounds checking (allows negative/>100%)
 
 ### URL Routing Patterns
-- **Global prefixes** (bypass shop scope): `["/partners", "address"]`
+- **Global prefixes** (bypass shop scope): `["/partners", "/address", "/geo"]` (with/without leading slash)
 - **Everything else:** `/shops/{shopId}/{path}`
 - CRM, ecommerce, livestream, statistics all scoped to shop
 
