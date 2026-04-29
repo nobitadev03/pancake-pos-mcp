@@ -44,9 +44,9 @@ export class PancakeHttpClient {
   private readonly hourRefillRateMs = 360; // 1 token every 360ms = 10000/hour
 
   constructor(config: PancakeConfig, options?: HttpClientOptions) {
-    this.baseUrl = config.PANCAKE_BASE_URL;
-    this.apiKey = config.PANCAKE_API_KEY;
-    this.shopId = config.PANCAKE_SHOP_ID;
+    this.baseUrl = config.PANCAKE_POS_BASE_URL;
+    this.apiKey = config.PANCAKE_POS_API_KEY;
+    this.shopId = config.PANCAKE_POS_SHOP_ID;
     this.fetchTimeoutMs = options?.fetchTimeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.maxRetries = options?.maxRetries ?? DEFAULT_MAX_RETRIES;
     this.enableRateLimiter = options?.enableRateLimiter ?? true;

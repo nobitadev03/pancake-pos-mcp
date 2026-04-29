@@ -86,8 +86,8 @@ Provide 23 domain-specific MCP tools that wrap Pancake POS endpoints, allowing A
 - Support all HTTP methods: GET, POST, PUT, DELETE
 
 #### Authentication (FR-3)
-- Accept Pancake API key from environment variable `PANCAKE_API_KEY`
-- Accept Pancake Shop ID from environment variable `PANCAKE_SHOP_ID`
+- Accept Pancake API key from environment variable `PANCAKE_POS_API_KEY`
+- Accept Pancake Shop ID from environment variable `PANCAKE_POS_SHOP_ID`
 - Inject shop ID into API paths automatically
 - Support optional Bearer token authentication for HTTP transport
 

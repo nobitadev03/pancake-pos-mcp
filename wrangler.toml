@@ -5,6 +5,6 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
 [vars]
-PANCAKE_BASE_URL = "https://pos.pages.fm/api/v1"
-# PANCAKE_API_KEY and PANCAKE_SHOP_ID must be set via `wrangler secret put`
+PANCAKE_POS_BASE_URL = "https://pos.pages.fm/api/v1"
+# PANCAKE_POS_API_KEY and PANCAKE_POS_SHOP_ID must be set via `wrangler secret put`
 # Do NOT define them here — [vars] would shadow encrypted secrets

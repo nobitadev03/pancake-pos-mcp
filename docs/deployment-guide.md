@@ -53,18 +53,18 @@ Create `.env` file with these values:
 ```bash
 # Pancake API Key (required)
 # Get from: Pancake POS dashboard → Settings → API & Integrations
-PANCAKE_API_KEY=your_api_key_here
+PANCAKE_POS_API_KEY=your_api_key_here
 
 # Pancake Shop ID (required)
 # Get from: Pancake POS dashboard → Shop settings
-PANCAKE_SHOP_ID=your_shop_id_here
+PANCAKE_POS_SHOP_ID=your_shop_id_here
 ```
 
 ### Optional Variables
 
 ```bash
 # Override API base URL (default: https://pos.pages.fm/api/v1)
-PANCAKE_BASE_URL=https://pos.pages.fm/api/v1
+PANCAKE_POS_BASE_URL=https://pos.pages.fm/api/v1
 
 # HTTP server port (default: 3000, only for --http mode)
 PORT=3000
@@ -75,14 +75,14 @@ MCP_AUTH_TOKEN=your_secret_token_here
 
 ### Getting Credentials
 
-#### PANCAKE_API_KEY
+#### PANCAKE_POS_API_KEY
 
 1. Log in to Pancake POS (https://pos.pages.fm)
 2. Navigate to Settings → API & Integrations
 3. Create new API key or copy existing one
 4. Key format: Usually a long alphanumeric string
 
-#### PANCAKE_SHOP_ID
+#### PANCAKE_POS_SHOP_ID
 
 1. Log in to Pancake POS
 2. Navigate to Shop Settings
@@ -399,8 +399,8 @@ docker build -t pancake-pos-mcp:0.1.0 .
 docker run -d \
   --name pancake-pos-mcp \
   -p 3000:3000 \
-  -e PANCAKE_API_KEY=your_key \
-  -e PANCAKE_SHOP_ID=your_shop_id \
+  -e PANCAKE_POS_API_KEY=your_key \
+  -e PANCAKE_POS_SHOP_ID=your_shop_id \
   -e MCP_AUTH_TOKEN=your_token \
   pancake-pos-mcp:0.1.0
 ```
@@ -417,8 +417,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      PANCAKE_API_KEY: ${PANCAKE_API_KEY}
-      PANCAKE_SHOP_ID: ${PANCAKE_SHOP_ID}
+      PANCAKE_POS_API_KEY: ${PANCAKE_POS_API_KEY}
+      PANCAKE_POS_SHOP_ID: ${PANCAKE_POS_SHOP_ID}
       MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN}
       PORT: 3000
     restart: unless-stopped
@@ -467,10 +467,10 @@ wrangler login
 
 ```bash
 # Set API credentials (stored securely in Cloudflare)
-wrangler secret put PANCAKE_API_KEY
+wrangler secret put PANCAKE_POS_API_KEY
 # Paste your key and press Ctrl+D
 
-wrangler secret put PANCAKE_SHOP_ID
+wrangler secret put PANCAKE_POS_SHOP_ID
 # Paste your shop ID and press Ctrl+D
 
 # Optional: set MCP auth token
@@ -719,8 +719,8 @@ API error 401: Unauthorized
 ```
 
 **Solution:**
-1. Verify PANCAKE_API_KEY is correct (check Pancake dashboard)
-2. Verify PANCAKE_SHOP_ID is correct
+1. Verify PANCAKE_POS_API_KEY is correct (check Pancake dashboard)
+2. Verify PANCAKE_POS_SHOP_ID is correct
 3. Regenerate API key if expired
 4. Check that shop is active
 

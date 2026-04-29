@@ -33,7 +33,7 @@ bun install
 
 # 3. Configure credentials
 cp .env.example .env
-# Open .env and fill in PANCAKE_API_KEY + PANCAKE_SHOP_ID
+# Open .env and fill in PANCAKE_POS_API_KEY + PANCAKE_POS_SHOP_ID
 # (See "Getting Pancake POS credentials" section below)
 
 # 4. Verify it runs
@@ -53,9 +53,9 @@ If step 4 prints an error, double-check your `.env` values and that you ran `bun
 
 You need two values from your Pancake POS account:
 
-1. **`PANCAKE_SHOP_ID`** — the numeric ID of your shop
+1. **`PANCAKE_POS_SHOP_ID`** — the numeric ID of your shop
    - Log in to https://pos.pages.fm and check the URL or shop settings to find the numeric shop ID
-2. **`PANCAKE_API_KEY`** — your Pancake POS API token
+2. **`PANCAKE_POS_API_KEY`** — your Pancake POS API token
    - Pancake POS Dashboard → **Cài đặt** (Settings) → **API** → **Generate API key**
    - Copy the key immediately — it is only shown once
 
@@ -67,14 +67,14 @@ Required (set in Quick Start):
 
 | Variable | Purpose |
 |---|---|
-| `PANCAKE_API_KEY` | Pancake POS API token |
-| `PANCAKE_SHOP_ID` | Numeric shop ID |
+| `PANCAKE_POS_API_KEY` | Pancake POS API token |
+| `PANCAKE_POS_SHOP_ID` | Numeric shop ID |
 
 Optional:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `PANCAKE_BASE_URL` | `https://pos.pages.fm/api/v1` | Override API endpoint |
+| `PANCAKE_POS_BASE_URL` | `https://pos.pages.fm/api/v1` | Override API endpoint |
 | `PORT` | `3000` | HTTP transport port |
 | `MCP_AUTH_TOKEN` | _(none)_ | Bearer token for HTTP/Workers auth |
 
@@ -132,8 +132,8 @@ wrangler login
 bun run deploy
 
 # Set production secrets
-wrangler secret put PANCAKE_API_KEY
-wrangler secret put PANCAKE_SHOP_ID
+wrangler secret put PANCAKE_POS_API_KEY
+wrangler secret put PANCAKE_POS_SHOP_ID
 wrangler secret put MCP_AUTH_TOKEN
 ```
 

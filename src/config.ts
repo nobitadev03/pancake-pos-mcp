@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  PANCAKE_API_KEY: z.string().min(1, "PANCAKE_API_KEY is required"),
-  PANCAKE_SHOP_ID: z.string().min(1, "PANCAKE_SHOP_ID is required"),
-  PANCAKE_BASE_URL: z
+  PANCAKE_POS_API_KEY: z.string().min(1, "PANCAKE_POS_API_KEY is required"),
+  PANCAKE_POS_SHOP_ID: z.string().min(1, "PANCAKE_POS_SHOP_ID is required"),
+  PANCAKE_POS_BASE_URL: z
     .string()
     .url()
     .default("https://pos.pages.fm/api/v1"),

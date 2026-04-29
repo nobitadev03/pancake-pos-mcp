@@ -106,7 +106,7 @@ Used by:
 ## 3. Naming Conventions
 
 ### Variable Names
-- **Config:** `PANCAKE_API_KEY` (UPPER_SNAKE_CASE for constants)
+- **Config:** `PANCAKE_POS_API_KEY` (UPPER_SNAKE_CASE for constants)
 - **Functions:** `handleOrdersTool` (camelCase)
 - **Classes:** `PancakeHttpClient` (PascalCase)
 - **Parameters:** `page_number` (snake_case, matches API schema)
@@ -467,24 +467,24 @@ new URL(path, `${baseUrl}/shops/${shopId}/`)
 
 ### Environment Variables (Required at Startup)
 ```bash
-PANCAKE_BASE_URL=https://api.pos.poscake.vn
-PANCAKE_API_KEY=<bearer-token>
-PANCAKE_SHOP_ID=<shop-uuid>
+PANCAKE_POS_BASE_URL=https://api.pos.poscake.vn
+PANCAKE_POS_API_KEY=<bearer-token>
+PANCAKE_POS_SHOP_ID=<shop-uuid>
 ```
 
 ### config.ts (Single Source of Truth)
 ```typescript
 export interface PancakeConfig {
-  PANCAKE_BASE_URL: string;
-  PANCAKE_API_KEY: string;
-  PANCAKE_SHOP_ID: string;
+  PANCAKE_POS_BASE_URL: string;
+  PANCAKE_POS_API_KEY: string;
+  PANCAKE_POS_SHOP_ID: string;
 }
 
 export function loadConfig(): PancakeConfig {
   return {
-    PANCAKE_BASE_URL: process.env.PANCAKE_BASE_URL || "https://api.pos.poscake.vn",
-    PANCAKE_API_KEY: process.env.PANCAKE_API_KEY || "",
-    PANCAKE_SHOP_ID: process.env.PANCAKE_SHOP_ID || "",
+    PANCAKE_POS_BASE_URL: process.env.PANCAKE_POS_BASE_URL || "https://api.pos.poscake.vn",
+    PANCAKE_POS_API_KEY: process.env.PANCAKE_POS_API_KEY || "",
+    PANCAKE_POS_SHOP_ID: process.env.PANCAKE_POS_SHOP_ID || "",
   };
 }
 ```
@@ -497,7 +497,7 @@ const API_KEY = "abc123xyz";  // Hardcoded (insecure)
 
 ✓ **ALWAYS:**
 ```typescript
-const API_KEY = process.env.PANCAKE_API_KEY || "";  // Env var
+const API_KEY = process.env.PANCAKE_POS_API_KEY || "";  // Env var
 ```
 
 ---

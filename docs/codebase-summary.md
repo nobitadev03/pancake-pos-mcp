@@ -415,9 +415,9 @@ wrapped with deprecation interceptor yet — investigation pending.
 
 ### Required Environment Variables
 ```bash
-PANCAKE_BASE_URL=https://api.pos.poscake.vn  # Pancake API host
-PANCAKE_API_KEY=<your-api-key>               # Bearer token (injected as query param)
-PANCAKE_SHOP_ID=<shop-uuid>                  # Shop identifier (used in URL paths)
+PANCAKE_POS_BASE_URL=https://api.pos.poscake.vn  # Pancake API host
+PANCAKE_POS_API_KEY=<your-api-key>               # Bearer token (injected as query param)
+PANCAKE_POS_SHOP_ID=<shop-uuid>                  # Shop identifier (used in URL paths)
 ```
 
 ### Startup Modes

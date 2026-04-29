@@ -6,9 +6,9 @@ describe("PancakeHttpClient configurable options", () => {
       "../src/api-client/pancake-http-client.js"
     );
     const client = new PancakeHttpClient({
-      PANCAKE_API_KEY: "test",
-      PANCAKE_SHOP_ID: "test",
-      PANCAKE_BASE_URL: "https://api.test.com",
+      PANCAKE_POS_API_KEY: "test",
+      PANCAKE_POS_SHOP_ID: "test",
+      PANCAKE_POS_BASE_URL: "https://api.test.com",
       PORT: 3000,
     });
     // Default timeout should be 30s
@@ -22,9 +22,9 @@ describe("PancakeHttpClient configurable options", () => {
     );
     const client = new PancakeHttpClient(
       {
-        PANCAKE_API_KEY: "test",
-        PANCAKE_SHOP_ID: "test",
-        PANCAKE_BASE_URL: "https://api.test.com",
+        PANCAKE_POS_API_KEY: "test",
+        PANCAKE_POS_SHOP_ID: "test",
+        PANCAKE_POS_BASE_URL: "https://api.test.com",
         PORT: 3000,
       },
       { fetchTimeoutMs: 8_000, maxRetries: 2, enableRateLimiter: false },
@@ -68,9 +68,9 @@ describe("PancakeHttpClient 429 retry", () => {
     );
     const client = new PancakeHttpClient(
       {
-        PANCAKE_API_KEY: "test",
-        PANCAKE_SHOP_ID: "test",
-        PANCAKE_BASE_URL: "https://api.test.com",
+        PANCAKE_POS_API_KEY: "test",
+        PANCAKE_POS_SHOP_ID: "test",
+        PANCAKE_POS_BASE_URL: "https://api.test.com",
         PORT: 3000,
       },
       { enableRateLimiter: false },
@@ -111,9 +111,9 @@ describe("Rate limiter control", () => {
     );
     const client = new PancakeHttpClient(
       {
-        PANCAKE_API_KEY: "test",
-        PANCAKE_SHOP_ID: "test",
-        PANCAKE_BASE_URL: "https://api.test.com",
+        PANCAKE_POS_API_KEY: "test",
+        PANCAKE_POS_SHOP_ID: "test",
+        PANCAKE_POS_BASE_URL: "https://api.test.com",
         PORT: 3000,
       },
       { enableRateLimiter: false },

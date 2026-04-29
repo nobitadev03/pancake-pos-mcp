@@ -548,9 +548,9 @@ Each resource is exposed as a read-only MCP Resource (no write).
 ### Authentication Flow
 ```
 User provides at startup:
-  PANCAKE_BASE_URL       = "https://api.pos.poscake.vn"
-  PANCAKE_API_KEY        = "<bearer-token>"
-  PANCAKE_SHOP_ID        = "<shop-uuid>"
+  PANCAKE_POS_BASE_URL       = "https://api.pos.poscake.vn"
+  PANCAKE_POS_API_KEY        = "<bearer-token>"
+  PANCAKE_POS_SHOP_ID        = "<shop-uuid>"
 
 Request Builder injects:
   Every URL gets: ?shop_id={shopId}&access_token={apiKey}
@@ -577,7 +577,7 @@ Example:
 - **State:** Only rate limiter state (token buckets) held in memory
 
 ### Scaling Strategies
-1. **Multiple Instances:** Deploy N servers, each with different PANCAKE_SHOP_ID
+1. **Multiple Instances:** Deploy N servers, each with different PANCAKE_POS_SHOP_ID
 2. **Load Balancer:** Route HTTP requests to multiple instances
 3. **Shared Rate Limit:** Could implement Redis-backed rate limiter for true multi-instance coordination
 4. **Caching Layer:** Add Redis for frequently accessed data (products, categories)
@@ -668,15 +668,15 @@ compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-PANCAKE_API_KEY = "placeholder-set-via-wrangler-secret"
-PANCAKE_SHOP_ID = "placeholder-set-via-wrangler-secret"
-PANCAKE_BASE_URL = "https://pos.pages.fm/api/v1"
+PANCAKE_POS_API_KEY = "placeholder-set-via-wrangler-secret"
+PANCAKE_POS_SHOP_ID = "placeholder-set-via-wrangler-secret"
+PANCAKE_POS_BASE_URL = "https://pos.pages.fm/api/v1"
 ```
 
 Secrets are managed separately:
 ```bash
-wrangler secret put PANCAKE_API_KEY
-wrangler secret put PANCAKE_SHOP_ID
+wrangler secret put PANCAKE_POS_API_KEY
+wrangler secret put PANCAKE_POS_SHOP_ID
 wrangler secret put MCP_AUTH_TOKEN  # optional, for Bearer token auth
 ```
 
