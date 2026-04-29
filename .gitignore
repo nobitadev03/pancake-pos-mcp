@@ -44,3 +44,6 @@ repomix-output.xml
 .claude/
 plans/
 .gitkeep
+
+# Journals (internal)
+docs/journals/
