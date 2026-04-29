@@ -369,15 +369,16 @@ shop scope.
 
 | Entity | OLD fields in response | NEW (`new_*`) fields | Notes |
 |---|---|---|---|
-| `orders` | ✓ | ✓ | Dual-format applied in `VietnamAddressSchema` (see Phase 2 of `plans/260428-1730-orders-address-schema-overhaul/`) |
+| `orders` | ✓ | ✓ | Dual-format applied in `VietnamAddressSchema` (see changelog entry 2026-04-28) |
 | `customers` | ✓ via `shop_customer_addresses[]` (note: not `addresses[]`) | ✗ | Pancake has not migrated this endpoint to 2-tier yet |
 | `warehouses` | ✓ flat fields | ✗ | Same — OLD only |
 | `shop-info` | unknown | unknown | GET endpoint `/shops/{id}/shop` returns HTTP 404 — separate upstream issue |
 
-Phase 3 of the address overhaul plan (apply `VietnamAddressSchema` to
-customers/warehouses/shop-info) was **cancelled** rather than deferred:
-exposing `new_*` fields on these tools would let LLMs send IDs the backend
-silently drops. Re-evaluate when Pancake migrates the remaining endpoints.
+Phase 3 of the address overhaul (apply `VietnamAddressSchema` to
+customers/warehouses/shop-info) was **cancelled** rather than deferred (see
+changelog 2026-04-28): exposing `new_*` fields on these tools would let LLMs
+send IDs the backend silently drops. Re-evaluate when Pancake migrates the
+remaining endpoints.
 
 **`shop-info-tool` GET is also known-broken** — `/shops/{id}/shop` returns 404
 on shop 123456789 with api_key. Update path (`shop/update`) untested. Not
@@ -525,8 +526,6 @@ Recommended checklist (not yet automated):
 
 ## References
 
-- **API Documentation:** `/docs/pancake-api-complete-taxonomy.md` (all endpoints)
-- **Implementation Plan:** `/plans/260409-1430-pancake-pos-mcp-implementation/`
-- **Code Review:** `/plans/reports/reviewer-2026-04-10-phases-2-5.md` (known issues)
-- **OpenAPI Spec:** `/docs/pancake-openapi-spec.json` (machine-readable)
+- **API Documentation:** `/docs/poscake-api-docs.md` (Pancake API reference)
+- **OpenAPI Spec:** `/docs/pancake-openapi-spec.json` (machine-readable API schema)
 

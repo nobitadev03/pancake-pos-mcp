@@ -15,10 +15,50 @@ Pancake POS MCP exposes the Pancake POS API (https://pos.pages.fm/api/v1) as Mod
 
 ## Prerequisites
 
-- **Bun** (runtime) - install from https://bun.sh
-- **Pancake POS API Key** - from your Pancake account
-- **Pancake Shop ID** - from your Pancake account
-- **Node.js 18+** (optional, for development)
+- **Bun** (runtime) — install from https://bun.sh (`curl -fsSL https://bun.sh/install | bash`)
+- **Pancake POS API Key** + **Shop ID** — see [Getting Pancake credentials](#getting-pancake-credentials) below
+- **Node.js 18+** (optional, for development tooling)
+
+## Quick Start
+
+Get from zero to a working MCP server in ~5 minutes:
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/nguyennguyenit/pancake-pos-mcp.git
+cd pancake-pos-mcp
+
+# 2. Install dependencies
+bun install
+
+# 3. Configure credentials
+cp .env.example .env
+# Open .env and fill in PANCAKE_API_KEY + PANCAKE_SHOP_ID
+# (See "Getting Pancake credentials" section below)
+
+# 4. Verify it runs
+bun run src/index.ts
+# Expected output:
+#   [pancake-pos-mcp] Server started on stdio transport
+# Press Ctrl+C to stop.
+
+# 5. Connect Claude Desktop — see "Stdio Transport" section below
+```
+
+If step 4 prints an error, double-check your `.env` values and that you ran `bun install`. Common issues are listed in [Troubleshooting](#troubleshooting).
+
+## Getting Pancake credentials
+
+You need two values from your Pancake POS account:
+
+1. **`PANCAKE_SHOP_ID`** — the numeric ID of your shop
+   - Log in to https://pos.pages.fm
+   - The shop ID appears in the URL after login: `https://pos.pages.fm/shops/<SHOP_ID>/...`
+2. **`PANCAKE_API_KEY`** — your API authentication token
+   - Pancake Dashboard → **Cài đặt** (Settings) → **API** → **Generate API key**
+   - Copy the key immediately — it is only shown once
+
+> Keep both values secret. Never commit them to git. The `.gitignore` already excludes `.env` and `.dev.vars`.
 
 ## Installation
 
@@ -230,9 +270,22 @@ See [docs/code-standards.md](./docs/code-standards.md) for full development guid
 - **[project-roadmap.md](./docs/project-roadmap.md)** — Implementation progress and milestones
 - **[poscake-api-docs.md](./docs/poscake-api-docs.md)** — Complete Pancake API reference
 
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `bun: command not found` | Bun not installed or not in PATH | `curl -fsSL https://bun.sh/install \| bash` then restart shell |
+| `Missing PANCAKE_API_KEY` on startup | `.env` file missing or empty | `cp .env.example .env` and fill in real values |
+| `401 Unauthorized` from Pancake API | Invalid or expired API key | Regenerate key in Pancake Dashboard → Settings → API |
+| `404 Not Found` on every API call | Wrong `PANCAKE_SHOP_ID` | Re-check the shop ID in your Pancake URL |
+| Port 3000 already in use (HTTP mode) | Another process on port 3000 | Set `PORT=3001` in `.env` |
+| Claude Desktop doesn't see the tools | Wrong path in `claude_desktop_config.json` | Use absolute path; restart Claude Desktop after editing |
+| `429 Too Many Requests` | Hit Pancake rate limit (1000/min, 10000/hour) | Wait — built-in token bucket auto-throttles; reduce parallelism |
+| Tests fail with `Cannot find package 'cloudflare:test'` | Ran `bun test` instead of `bun run test` | Use `bun run test` (vitest), not native `bun test` |
+
 ## License
 
-Proprietary - for use with Pancake POS accounts only
+MIT License — See [LICENSE](./LICENSE) file for full text.
 
 ## Support
 

@@ -1,9 +1,9 @@
 # Pancake POS MCP - Project Roadmap
 
 **Version:** 0.1.0  
-**Status:** Phases 1-5 Complete (Implementation 100%)  
-**Last Updated:** 2026-04-10  
-**Next Milestone:** Testing & Refinement
+**Status:** Phases 1-5 Complete (Implementation 100%) + Public-Release Preparation  
+**Last Updated:** 2026-04-29  
+**Next Milestone:** Public Release
 
 ---
 
@@ -120,7 +120,26 @@ Pancake POS MCP implementation is **feature-complete** with all 23 tools deploye
 
 ---
 
-## Current Milestone: Testing & Refinement
+## Current Milestone: Public Release Readiness (2026-04-29)
+
+**Status:** Repository prepared for public distribution on GitHub
+
+### Completion
+- [x] Shop ID redacted from tracked files (→ 123456789 placeholder)
+- [x] Internal artifacts removed from git history (.claude, plans, docs/journals)
+- [x] Personal filesystem paths scrubbed from history
+- [x] MIT LICENSE added
+- [x] .gitignore updated for public distribution
+- [x] Force-pushed cleaned history to remote (private → ready for public flip)
+
+### Impact
+- Tracked file count: 105 → 68 (clean repo without development artifacts)
+- No changes to tool functionality, API contracts, or deployment models
+- All documentation verified for placeholder shop ID usage
+
+---
+
+## Previous Milestone: Testing & Refinement
 
 ### Work In Progress
 

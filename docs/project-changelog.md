@@ -1,5 +1,26 @@
 # Project Changelog
 
+## [Unreleased]
+
+### Public-release preparation (2026-04-29)
+
+**Scope:** Git history cleanup and repository preparation for public release.
+
+**Changes:**
+- Shop ID redaction: Real shop `407195186` replaced with placeholder `123456789` across tests, docs, and tool comments
+- Removed internal artifacts: `.claude/`, `plans/`, `docs/journals/`, `.gitkeep` scrubbed from git history via `git filter-repo`
+- Personal filesystem path redaction: Old references (e.g., `/Users/plateau/Project/pancake-pos-mcp/`) rewritten to `./redacted-path` in history
+- Added MIT LICENSE at repo root for open-source distribution
+- Updated `.gitignore` to ignore `.claude/`, `plans/`, `docs/journals/`, `.gitkeep` going forward
+- Force-pushed cleaned history to remote (private repo, ready to flip to public)
+- Tracked file count reduced from 105 → 68 (artifacts, internal docs removed)
+
+**API Behavior:** No changes — all tools, resources, and transport modes remain unchanged.
+
+**Documentation:** Verified all references to shop ID, filesystem paths, and plan locations are accurate for public state.
+
+---
+
 ## 2026-04-29 — address-lookup migrated `/address/*` → `/geo/*`
 
 Discovered via Pancake POS web UI network capture. Endpoint was renamed (not removed) and behavior subtly improved:
