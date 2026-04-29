@@ -52,53 +52,35 @@ If step 4 prints an error, double-check your `.env` values and that you ran `bun
 You need two values from your Pancake POS account:
 
 1. **`PANCAKE_SHOP_ID`** — the numeric ID of your shop
-   - Log in to https://pos.pages.fm
-   - The shop ID appears in the URL after login: `https://pos.pages.fm/shops/<SHOP_ID>/...`
+   - Log in to https://pos.pages.fm and check the URL or shop settings to find the numeric shop ID
 2. **`PANCAKE_API_KEY`** — your API authentication token
    - Pancake Dashboard → **Cài đặt** (Settings) → **API** → **Generate API key**
    - Copy the key immediately — it is only shown once
 
 > Keep both values secret. Never commit them to git. The `.gitignore` already excludes `.env` and `.dev.vars`.
 
-## Installation
-
-```bash
-bun install
-```
-
 ## Configuration
 
-Create a `.env` file based on `.env.example`:
+Required (set in Quick Start):
 
-```bash
-# Copy the template
-cp .env.example .env
+| Variable | Purpose |
+|---|---|
+| `PANCAKE_API_KEY` | Pancake API token |
+| `PANCAKE_SHOP_ID` | Numeric shop ID |
 
-# Edit with your credentials
-PANCAKE_API_KEY=your_api_key_here
-PANCAKE_SHOP_ID=your_shop_id_here
+Optional:
 
-# Optional: override default API base URL
-# PANCAKE_BASE_URL=https://pos.pages.fm/api/v1
-
-# Optional: HTTP transport port (default: 3000)
-# PORT=3000
-
-# Optional: Bearer token for HTTP transport authentication
-# MCP_AUTH_TOKEN=your_secret_token_here
-```
+| Variable | Default | Purpose |
+|---|---|---|
+| `PANCAKE_BASE_URL` | `https://pos.pages.fm/api/v1` | Override API endpoint |
+| `PORT` | `3000` | HTTP transport port |
+| `MCP_AUTH_TOKEN` | _(none)_ | Bearer token for HTTP/Workers auth |
 
 ## Usage
 
 ### Stdio Transport (Claude Desktop)
 
-Default mode - connect via Claude Desktop:
-
-```bash
-bun run src/index.ts
-```
-
-Add to Claude Desktop config `claude_desktop_config.json`:
+Default mode. Add to Claude Desktop config `claude_desktop_config.json`:
 
 ```json
 {
@@ -137,9 +119,6 @@ curl -H "Authorization: Bearer your_secret_token" http://localhost:3000/mcp
 Deploy globally on Cloudflare Workers for low-latency access from anywhere:
 
 ```bash
-# Install dependencies
-bun install
-
 # Local development (uses .dev.vars for secrets)
 cp .dev.vars.example .dev.vars
 # Edit .dev.vars with your credentials
@@ -235,10 +214,10 @@ Static reference resources (no authentication required):
 bun run typecheck
 ```
 
-### Rebuild on Changes
+### Run Tests
 
 ```bash
-bun run start:stdio  # Auto-reload with Bun
+bun run test       # vitest (includes Workers tests)
 ```
 
 ### Project Structure
@@ -272,25 +251,14 @@ See [docs/code-standards.md](./docs/code-standards.md) for full development guid
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| `bun: command not found` | Bun not installed or not in PATH | `curl -fsSL https://bun.sh/install \| bash` then restart shell |
-| `Missing PANCAKE_API_KEY` on startup | `.env` file missing or empty | `cp .env.example .env` and fill in real values |
-| `401 Unauthorized` from Pancake API | Invalid or expired API key | Regenerate key in Pancake Dashboard → Settings → API |
-| `404 Not Found` on every API call | Wrong `PANCAKE_SHOP_ID` | Re-check the shop ID in your Pancake URL |
-| Port 3000 already in use (HTTP mode) | Another process on port 3000 | Set `PORT=3001` in `.env` |
-| Claude Desktop doesn't see the tools | Wrong path in `claude_desktop_config.json` | Use absolute path; restart Claude Desktop after editing |
-| `429 Too Many Requests` | Hit Pancake rate limit (1000/min, 10000/hour) | Wait — built-in token bucket auto-throttles; reduce parallelism |
-| Tests fail with `Cannot find package 'cloudflare:test'` | Ran `bun test` instead of `bun run test` | Use `bun run test` (vitest), not native `bun test` |
+A few non-obvious gotchas:
+
+- **`429 Too Many Requests`** — hit Pancake rate limit (1000/min, 10000/hour). The built-in token bucket auto-throttles; reduce parallelism on the caller side.
+- **Tests fail with `Cannot find package 'cloudflare:test'`** — use `bun run test` (vitest), not native `bun test`. Workers tests need the vitest pool worker plugin.
+- **Claude Desktop doesn't see the tools** — the `command`/`args` path in `claude_desktop_config.json` must be absolute. Restart Claude Desktop after editing the config.
+
+For other errors, check the error message and verify `.env` credentials.
 
 ## License
 
 MIT License — See [LICENSE](./LICENSE) file for full text.
-
-## Support
-
-For issues or questions:
-1. Check documentation in `./docs`
-2. Review tool schemas and error messages
-3. Verify `.env` configuration and API credentials
-4. Check Pancake API status at https://pos.pages.fm
