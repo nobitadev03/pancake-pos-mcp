@@ -7,9 +7,9 @@
 **Scope:** Git history cleanup and repository preparation for public release.
 
 **Changes:**
-- Shop ID redaction: Real shop `407195186` replaced with placeholder `123456789` across tests, docs, and tool comments
+- Shop ID redaction: real shop ID replaced with a placeholder across tests, docs, and tool comments
 - Removed internal artifacts: `.claude/`, `plans/`, `docs/journals/`, `.gitkeep` scrubbed from git history via `git filter-repo`
-- Personal filesystem path redaction: Old references (e.g., `/Users/plateau/Project/pancake-pos-mcp/`) rewritten to `./redacted-path` in history
+- Personal filesystem path redaction: absolute developer paths rewritten to relative form in history
 - Added MIT LICENSE at repo root for open-source distribution
 - Updated `.gitignore` to ignore `.claude/`, `plans/`, `docs/journals/`, `.gitkeep` going forward
 - Force-pushed cleaned history to remote (private repo, ready to flip to public)
