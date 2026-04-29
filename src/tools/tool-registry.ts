@@ -666,11 +666,11 @@ export function registerAllTools(server: McpServer, client: PancakeHttpClient): 
 
   server.tool(
     "lookup_address",
-    "Lookup Vietnamese administrative addresses in Pancake POS. Actions: provinces (all provinces), districts (by province_id), communes (by district_id).",
+    "Lookup Vietnamese administrative locations in Pancake POS via /geo/* endpoints. Polymorphic on ID format: OLD (e.g. '109' = Hưng Yên) returns 3-tier (province→district→commune); NEW post-2025-07-01 (e.g. '84_VN105') returns 2-tier (no district level — reform abolished districts). Use OLD format if you need district_id for legacy shipping_address; use NEW format for current admin structure. Provinces response includes both `id` (OLD) and `new_id` (NEW) for cross-mapping.",
     {
-      action: z.enum(["provinces", "districts", "communes"]).describe("Action: provinces (all), districts (requires province_id), communes (requires district_id)"),
-      province_id: z.string().optional().describe("Province ID (required for districts action)"),
-      district_id: z.string().optional().describe("District ID (required for communes action)"),
+      action: z.enum(["provinces", "districts", "communes"]).describe("provinces: list all (returns both OLD id and new_id). districts: OLD-only, requires OLD province_id. communes: requires province_id (OLD or NEW) OR district_id (OLD); accepts either."),
+      province_id: z.string().optional().describe("Province ID. OLD format e.g. '109', or NEW format e.g. '84_VN105'. Required for districts (OLD only) and recommended for communes."),
+      district_id: z.string().optional().describe("District ID, OLD format only e.g. '10909' (NEW format has no districts). Optional for communes — narrows OLD results to one district."),
     },
     async (args) => {
       try {
