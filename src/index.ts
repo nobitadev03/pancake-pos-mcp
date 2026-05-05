@@ -8,9 +8,9 @@ const transportMode = args.includes("--http") ? "http" : "stdio";
 
 const config = loadConfig();
 const client = new PancakeHttpClient(config);
-const server = createServer(client);
 
 if (transportMode === "stdio") {
+  const server = createServer(client);
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("[pancake-pos-mcp] Server started on stdio transport");
@@ -19,11 +19,16 @@ if (transportMode === "stdio") {
     "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js"
   );
 
-  const transport = new WebStandardStreamableHTTPServerTransport({
-    sessionIdGenerator: () => crypto.randomUUID(),
-  });
-
-  await server.connect(transport);
+  // Per-request transport — SDK rejects re-initialization on a shared transport.
+  async function createPerRequestTransport() {
+    const server = createServer(client);
+    const transport = new WebStandardStreamableHTTPServerTransport({
+      sessionIdGenerator: undefined, // stateless
+      enableJsonResponse: true,
+    });
+    await server.connect(transport);
+    return transport;
+  }
 
   const authToken = config.MCP_AUTH_TOKEN;
   if (!authToken) {
@@ -35,14 +40,12 @@ if (transportMode === "stdio") {
     async fetch(req: Request): Promise<Response> {
       const url = new URL(req.url);
 
-      // Health check — no auth required
       if (url.pathname === "/health") {
         return new Response(JSON.stringify({ status: "ok", transport: "streamable-http" }), {
           headers: { "Content-Type": "application/json" },
         });
       }
 
-      // MCP endpoint — auth required if token is set
       if (url.pathname === "/mcp") {
         if (authToken) {
           const authHeader = req.headers.get("authorization");
@@ -53,6 +56,7 @@ if (transportMode === "stdio") {
             });
           }
         }
+        const transport = await createPerRequestTransport();
         return transport.handleRequest(req);
       }
 
